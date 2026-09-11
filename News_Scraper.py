@@ -63,7 +63,7 @@ with sync_playwright() as p:
     page = browser.new_page()
 
     page.goto(url, wait_until="domcontentloaded", timeout=60000)
-    page.wait_for_selector("h5.card-title, h3.title", timeout=15000)
+    page.wait_for_selector("main, #main-content, .pane-content", timeout=15000)
 
     html = page.content()
     browser.close()
@@ -71,6 +71,33 @@ with sync_playwright() as p:
 soup = BeautifulSoup(html, "html.parser")
 articles = soup.select("h5.card-title a, h3.title a")
 
-for idx, a in enumerate(articles, start=1):
-    print(f"{idx}. {a.get_text(strip=True)}")
-    print(f"   {base_url + a.get('href', '')}\n")
+main_area = soup.find("main") or soup.find("div" , {'id':'main-cotent'}) or soup
+articles = main_area.select("""
+    h1 a, 
+    h2 a, 
+    h3 a, 
+    h4 a, 
+    h5 a,
+    .title a,
+    .card-title a
+""")
+
+count=1
+seen_links = set()
+for a in articles:
+    if a.find_parent(class_='header-news-card'):
+        continue
+
+    title = a.get_text(strip=True)
+    href = a.get("href", "")
+
+    if not href or href.startswith("#") or href.startswith("javascript:"):
+        continue
+
+    full_url = base_url + href if href.startswith("/") else href
+
+    if title and full_url not in seen_links:
+        seen_links.add(full_url)
+        print(f"{count}. {title}")
+        # print(f"   {full_url}\n")
+        count += 1
