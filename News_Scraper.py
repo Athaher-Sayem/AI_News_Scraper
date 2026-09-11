@@ -54,50 +54,70 @@ url = 'https://www.thedailystar.net/'
 #     print("-", item.text.strip())
 
 
+url_category=[
+"culture",
+'sports',
+'lifestyle',
+'opinion',
+'business',
 
-url = "https://www.thedailystar.net/culture"
+]
+
+
+url = f"https://www.thedailystar.net/{url_category}"
 base_url = "https://www.thedailystar.net"
 
-with sync_playwright() as p:
-    browser = p.chromium.launch(headless=True)
-    page = browser.new_page()
+idx=0
 
-    page.goto(url, wait_until="domcontentloaded", timeout=60000)
-    page.wait_for_selector("main, #main-content, .pane-content", timeout=15000)
+for category in url_category:
 
-    html = page.content()
-    browser.close()
+    url = f"https://www.thedailystar.net/{url_category[idx]}"
+   
 
-soup = BeautifulSoup(html, "html.parser")
-articles = soup.select("h5.card-title a, h3.title a")
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
 
-main_area = soup.find("main") or soup.find("div" , {'id':'main-cotent'}) or soup
-articles = main_area.select("""
-    h1 a, 
-    h2 a, 
-    h3 a, 
-    h4 a, 
-    h5 a,
-    .title a,
-    .card-title a
-""")
+        page.goto(url, wait_until="domcontentloaded", timeout=60000)
+        page.wait_for_selector("main, #main-content, .pane-content", timeout=15000)
 
-count=1
-seen_links = set()
-for a in articles:
-    if a.find_parent(class_='header-news-card'):
-        continue
+        html = page.content()
+        browser.close()
 
-    title = a.get_text(strip=True)
-    href = a.get("href", "")
+    soup = BeautifulSoup(html, "html.parser")
+    articles = soup.select("h5.card-title a, h3.title a")
 
-    if not href or href.startswith("#") or href.startswith("javascript:"):
-        continue
+    main_area = soup.find("main") or soup.find("div" , {'id':'main-cotent'}) or soup
+    articles = main_area.select("""
+        h1 a, 
+        h2 a, 
+        h3 a, 
+        h4 a, 
+        h5 a,
+        .title a,
+        .card-title a
+    """)
 
-    full_url = base_url + href if href.startswith("/") else href
+    count=1
+    seen_links = set()
 
-    if title and full_url not in seen_links:
-        seen_links.add(full_url)
-        print(f"{count}. {title}")
-        # print(f"   {full_url}\n")
-        count += 1
+    print(f"This is form this type of {url_category[idx]}category")
+    idx+=1
+    
+    for a in articles:
+        if a.find_parent(class_='header-news-card'):
+            continue
+
+        title = a.get_text(strip=True)
+        href = a.get("href", "")
+
+        if not href or href.startswith("#") or href.startswith("javascript:"):
+            continue
+
+        full_url = base_url + href if href.startswith("/") else href
+
+        if title and full_url not in seen_links:
+            seen_links.add(full_url)
+            print(f"{count}. {title}")
+            # print(f"   {full_url}\n")
+            count += 1
