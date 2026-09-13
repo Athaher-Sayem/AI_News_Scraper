@@ -11,9 +11,7 @@ def clean_text(text):
     if not text:
         return ""
 
-    return " ".join(
-        text.split()
-    ).strip()
+    return " ".join(text.split()).strip()
 
 
 def get_text(
@@ -23,9 +21,7 @@ def get_text(
 
     for selector in selectors:
 
-        element = soup.select_one(
-            selector
-        )
+        element = soup.select_one(selector)
 
         if element:
 
@@ -50,9 +46,7 @@ def get_attribute(
 
     for selector in selectors:
 
-        element = soup.select_one(
-            selector
-        )
+        element = soup.select_one(selector)
 
         if element:
 
@@ -76,9 +70,7 @@ def get_content(
 
     for selector in selectors:
 
-        content_area = soup.select_one(
-            selector
-        )
+        content_area = soup.select_one(selector)
 
         if content_area:
             break
@@ -122,9 +114,7 @@ def get_content(
         if text not in paragraphs:
             paragraphs.append(text)
 
-    return "\n\n".join(
-        paragraphs
-    )
+    return "\n\n".join(paragraphs)
 
 
 def detect_language(text):
@@ -134,7 +124,7 @@ def detect_language(text):
 
     for char in text:
 
-        if "\u0980" <= char <= "\u09FF":
+        if "\u0980" <= char <= "\u09ff":
             bangla += 1
 
         elif char.isalpha():
@@ -198,19 +188,13 @@ def scrape_article(
 
             image_url = get_attribute(
                 soup,
-                [
-                    "meta[property='og:image']"
-                ],
+                ["meta[property='og:image']"],
                 "content",
             )
 
-        language = detect_language(
-            title + " " + content
-        )
+        language = detect_language(title + " " + content)
 
-        scraped_date = datetime.now().strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
+        scraped_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         return {
             "Title": title,
@@ -224,9 +208,7 @@ def scrape_article(
 
     except Exception as e:
 
-        print(
-            f"Article scraping error: {e}"
-        )
+        print(f"Article scraping error: {e}")
 
         return None
 
@@ -256,9 +238,7 @@ def news_collect(
             encoding="utf-8",
         ) as file:
 
-            reader = csv.DictReader(
-                file
-            )
+            reader = csv.DictReader(file)
 
             for row in reader:
 
@@ -268,21 +248,13 @@ def news_collect(
                 ).strip()
 
                 if title:
-                    existing_titles.add(
-                        title
-                    )
+                    existing_titles.add(title)
 
-        print(
-            f"Existing titles: "
-            f"{len(existing_titles)}"
-        )
+        print(f"Existing titles: " f"{len(existing_titles)}")
 
     except FileNotFoundError:
 
-        print(
-            "CSV does not exist. "
-            "Creating new CSV."
-        )
+        print("CSV does not exist. " "Creating new CSV.")
 
     total_found = 0
     total_new = 0
@@ -323,29 +295,17 @@ def news_collect(
 
         with sync_playwright() as p:
 
-            browser = p.chromium.launch(
-                headless=True
-            )
+            browser = p.chromium.launch(headless=True)
 
-            category_page = (
-                browser.new_page()
-            )
+            category_page = browser.new_page()
 
-            article_page = (
-                browser.new_page()
-            )
+            article_page = browser.new_page()
 
-            print(
-                "\n###################################"
-            )
+            print("\n###################################")
 
-            print(
-                f" Scraping: {site_name}"
-            )
+            print(f" Scraping: {site_name}")
 
-            print(
-                "###################################"
-            )
+            print("###################################")
 
             # =================================================
             # CATEGORY LOOP
@@ -353,19 +313,11 @@ def news_collect(
 
             for category in categories:
 
-                category = category.strip(
-                    "/"
-                )
+                category = category.strip("/")
 
-                target_url = (
-                    f"{base_url}/"
-                    f"{category}"
-                )
+                target_url = f"{base_url}/" f"{category}"
 
-                print(
-                    f"\nCategory: "
-                    f"{category}"
-                )
+                print(f"\nCategory: " f"{category}")
 
                 try:
 
@@ -376,17 +328,13 @@ def news_collect(
                     )
 
                     category_page.wait_for_selector(
-                        "main, "
-                        "#main-content, "
-                        "body",
+                        "main, " "#main-content, " "body",
                         timeout=15000,
                     )
 
                 except Exception as e:
 
-                    print(
-                        f"Category error: {e}"
-                    )
+                    print(f"Category error: {e}")
 
                     continue
 
@@ -427,9 +375,7 @@ def news_collect(
 
                 for a in articles:
 
-                    if a.find_parent(
-                        class_="header-news-card"
-                    ):
+                    if a.find_parent(class_="header-news-card"):
                         continue
 
                     category_title = clean_text(
@@ -447,9 +393,7 @@ def news_collect(
                     if (
                         not href
                         or href.startswith("#")
-                        or href.startswith(
-                            "javascript:"
-                        )
+                        or href.startswith("javascript:")
                     ):
                         continue
 
@@ -464,9 +408,7 @@ def news_collect(
                     if len(category_title) <= 10:
                         continue
 
-                    seen_links.add(
-                        article_url
-                    )
+                    seen_links.add(article_url)
 
                     category_found += 1
                     total_found += 1
@@ -477,10 +419,7 @@ def news_collect(
 
                     if category_title in existing_titles:
 
-                        print(
-                            f"SKIPPED: "
-                            f"{category_title}"
-                        )
+                        print(f"SKIPPED: " f"{category_title}")
 
                         continue
 
@@ -488,14 +427,9 @@ def news_collect(
                     # SCRAPE ARTICLE
                     # =================================================
 
-                    print(
-                        f"\n{category_new + 1}. "
-                        f"NEW: {category_title}"
-                    )
+                    print(f"\n{category_new + 1}. " f"NEW: {category_title}")
 
-                    print(
-                        f"URL: {article_url}"
-                    )
+                    print(f"URL: {article_url}")
 
                     data = scrape_article(
                         article_page,
@@ -511,9 +445,7 @@ def news_collect(
                     # article page title fails
                     if not data["Title"]:
 
-                        data["Title"] = (
-                            category_title
-                        )
+                        data["Title"] = category_title
 
                     # =================================================
                     # SAVE
@@ -536,64 +468,35 @@ def news_collect(
 
                     file.flush()
 
-                    existing_titles.add(
-                        category_title
-                    )
+                    existing_titles.add(category_title)
 
-                    existing_titles.add(
-                        data["Title"]
-                    )
+                    existing_titles.add(data["Title"])
 
                     category_new += 1
                     total_new += 1
 
-                    print(
-                        f"Content: "
-                        f"{len(data['Content'])} "
-                        f"characters"
-                    )
+                    print(f"Content: " f"{len(data['Content'])} " f"characters")
 
-                    print(
-                        f"Author: "
-                        f"{data['Author']}"
-                    )
+                    print(f"Author: " f"{data['Author']}")
 
-                    print(
-                        f"Date: "
-                        f"{data['Published_Date']}"
-                    )
+                    print(f"Date: " f"{data['Published_Date']}")
 
-                    print(
-                        f"Language: "
-                        f"{data['Language']}"
-                    )
+                    print(f"Language: " f"{data['Language']}")
 
                 print(
-                    f"\n{category}: "
-                    f"{category_found} found, "
-                    f"{category_new} new"
+                    f"\n{category}: " f"{category_found} found, " f"{category_new} new"
                 )
 
             browser.close()
 
-    print(
-        "\n=================================="
-    )
+    print("\n==================================")
 
-    print(
-        f"{site_name}"
-    )
+    print(f"{site_name}")
 
-    print(
-        f"Total found: {total_found}"
-    )
+    print(f"Total found: {total_found}")
 
-    print(
-        f"Total new: {total_new}"
-    )
+    print(f"Total new: {total_new}")
 
-    print(
-        "=================================="
-    )
+    print("==================================")
 
     return total_new

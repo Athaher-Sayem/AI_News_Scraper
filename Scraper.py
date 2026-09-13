@@ -91,9 +91,7 @@ def news_collect(
                     html = page.content()
 
                 except Exception as e:
-                    print(
-                        f"Error loading {clean_category}: {e}"
-                    )
+                    print(f"Error loading {clean_category}: {e}")
                     continue
 
                 soup = BeautifulSoup(
@@ -128,9 +126,7 @@ def news_collect(
                 for a in articles:
 
                     # Skip header news cards
-                    if a.find_parent(
-                        class_="header-news-card"
-                    ):
+                    if a.find_parent(class_="header-news-card"):
                         continue
 
                     title = a.get_text(strip=True)
@@ -162,19 +158,13 @@ def news_collect(
 
                     # Check if title already exists in CSV
                     if title in existing_titles:
-                        print(
-                            f"SKIPPED: {title}"
-                        )
+                        print(f"SKIPPED: {title}")
                         continue
 
                     # New article
-                    print(
-                        f"{count}. NEW: {title}"
-                    )
+                    print(f"{count}. NEW: {title}")
 
-                    print(
-                        f"   {full_url}\n"
-                    )
+                    print(f"   {full_url}\n")
 
                     # Save new article
                     writer.writerow(
@@ -196,9 +186,7 @@ def news_collect(
             browser.close()
 
     print("\n-----------------------------------")
-    print(
-        f"{site_name}: {total_new} NEW titles collected"
-    )
+    print(f"{site_name}: {total_new} NEW titles collected")
     print("-----------------------------------")
 
     return total_new

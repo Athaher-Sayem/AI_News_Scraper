@@ -10,59 +10,143 @@ random.seed(42)
 
 # CSV LOAD  (case-insensitive header + lowercase keys)
 
+
 def load_titles(filepath):
     data = []
-    with open(filepath, 'r', encoding='utf-8') as f:
+    with open(filepath, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            row_lower = {(k or '').strip().lower(): v for k, v in row.items()}
+            row_lower = {(k or "").strip().lower(): v for k, v in row.items()}
 
-            t = (row_lower.get('title') or '').strip()
+            t = (row_lower.get("title") or "").strip()
             if t and len(t) > 10:
-                data.append({
-                    'source':   (row_lower.get('source')   or '').strip(),
-                    'category': (row_lower.get('category') or '').strip(),
-                    'title':    t,
-                    'url':      (row_lower.get('url')      or '').strip(),
-                })
+                data.append(
+                    {
+                        "source": (row_lower.get("source") or "").strip(),
+                        "category": (row_lower.get("category") or "").strip(),
+                        "title": t,
+                        "url": (row_lower.get("url") or "").strip(),
+                    }
+                )
     return data
-
 
 
 # TEXT PREPROCESSING
 STOPWORDS = {
-    'the','a','an','and','or','but','in','on','at','to','for','of','with',
-    'by','from','as','is','are','was','were','be','been','being','it','its',
-    'this','that','these','those','has','have','had','will','would','can',
-    'could','may','might','do','does','did','not','no','so','up','out','about',
-    'after','before','over','under','into','through','during','between',
-    'new','says','said','say','also','one','two','three','first','last',
-    'amid','against','onto','upon','her','his','him','she','he','they',
-    'their','them','we','our','you','your','i','me','my'
+    "the",
+    "a",
+    "an",
+    "and",
+    "or",
+    "but",
+    "in",
+    "on",
+    "at",
+    "to",
+    "for",
+    "of",
+    "with",
+    "by",
+    "from",
+    "as",
+    "is",
+    "are",
+    "was",
+    "were",
+    "be",
+    "been",
+    "being",
+    "it",
+    "its",
+    "this",
+    "that",
+    "these",
+    "those",
+    "has",
+    "have",
+    "had",
+    "will",
+    "would",
+    "can",
+    "could",
+    "may",
+    "might",
+    "do",
+    "does",
+    "did",
+    "not",
+    "no",
+    "so",
+    "up",
+    "out",
+    "about",
+    "after",
+    "before",
+    "over",
+    "under",
+    "into",
+    "through",
+    "during",
+    "between",
+    "new",
+    "says",
+    "said",
+    "say",
+    "also",
+    "one",
+    "two",
+    "three",
+    "first",
+    "last",
+    "amid",
+    "against",
+    "onto",
+    "upon",
+    "her",
+    "his",
+    "him",
+    "she",
+    "he",
+    "they",
+    "their",
+    "them",
+    "we",
+    "our",
+    "you",
+    "your",
+    "i",
+    "me",
+    "my",
 }
 
 
 def tokenize(text):
     """Lowercase + punctuation remove + stopword remove + tokenize"""
     text = text.lower()
-    text = re.sub(r'[^a-z0-9\s]', ' ', text)
+    text = re.sub(r"[^a-z0-9\s]", " ", text)
     tokens = text.split()
     return [w for w in tokens if w not in STOPWORDS and len(w) > 1]
 
 
-#  WORD2VEC 
+#  WORD2VEC
 class Word2Vec:
 
-    def __init__(self, vector_size=100, window=3, negative_samples=5,
-                 learning_rate=0.025, epochs=5):
+    def __init__(
+        self,
+        vector_size=100,
+        window=3,
+        negative_samples=5,
+        learning_rate=0.025,
+        epochs=5,
+    ):
         self.vector_size = vector_size
         self.window = window
         self.neg_samples = negative_samples
         self.lr = learning_rate
         self.epochs = epochs
 
-        self.vocab = {}          
-        self.idx2word = {}       
+        self.vocab = {}
+        self.idx2word = {}
         self.word_counts = Counter()
         self.W_in = None
         self.W_out = None
@@ -79,19 +163,24 @@ class Word2Vec:
         V = len(self.vocab)
         print(f"[Word2Vec] Vocab size: {V}")
 
-      
         limit = 0.5 / self.vector_size
-        self.W_in = [[random.uniform(-limit, limit) for _ in range(self.vector_size)]
-                     for _ in range(V)]
-        self.W_out = [[random.uniform(-limit, limit) for _ in range(self.vector_size)]
-                      for _ in range(V)]
+        self.W_in = [
+            [random.uniform(-limit, limit) for _ in range(self.vector_size)]
+            for _ in range(V)
+        ]
+        self.W_out = [
+            [random.uniform(-limit, limit) for _ in range(self.vector_size)]
+            for _ in range(V)
+        ]
 
         total = sum(self.word_counts[w] ** 0.75 for w in self.vocab)
         self.unigram_table = []
         for w, c in self.word_counts.items():
             if w in self.vocab:
-                prob = (c ** 0.75) / total
-                self.unigram_table.extend([self.vocab[w]] * max(1, int(prob * 1_000_000)))
+                prob = (c**0.75) / total
+                self.unigram_table.extend(
+                    [self.vocab[w]] * max(1, int(prob * 1_000_000))
+                )
 
     # ---------- Helpers ----------
     @staticmethod
@@ -117,7 +206,7 @@ class Word2Vec:
     def train(self, tokenized_docs):
         lr0 = self.lr
         for epoch in range(self.epochs):
-            
+
             self.lr = lr0 * (1.0 - epoch / self.epochs)
             total_loss = 0.0
             pairs = 0
@@ -137,8 +226,10 @@ class Word2Vec:
                         total_loss += self._sgd_step(center, ids[j])
 
             avg_loss = total_loss / max(pairs, 1)
-            print(f"[Word2Vec] Epoch {epoch+1}/{self.epochs} | "
-                  f"Loss: {avg_loss:.4f} | LR: {self.lr:.4f}")
+            print(
+                f"[Word2Vec] Epoch {epoch+1}/{self.epochs} | "
+                f"Loss: {avg_loss:.4f} | LR: {self.lr:.4f}"
+            )
 
     def _sgd_step(self, center, context):
         """Proper forward → backward (gradients use SAME weights as forward)"""
@@ -148,26 +239,26 @@ class Word2Vec:
         labels = [1.0] + [0.0] * self.neg_samples
         loss = 0.0
 
-        
         cache = []
         for t_idx, label in zip(targets, labels):
             u = self.W_out[t_idx]
             score = self._dot(h, u)
             pred = self.sigmoid(score)
             err = pred - label
-            cache.append((t_idx, err, u[:]))   
-            loss += -(label * math.log(pred + 1e-9) +
-                      (1 - label) * math.log(1 - pred + 1e-9))
+            cache.append((t_idx, err, u[:]))
+            loss += -(
+                label * math.log(pred + 1e-9) + (1 - label) * math.log(1 - pred + 1e-9)
+            )
 
         # ---------- Backward pass ----------
         grad_h = [0.0] * self.vector_size
         for t_idx, err, u_old in cache:
             for d in range(self.vector_size):
-                grad_h[d] += err * u_old[d]                    # grad for W_in
-                self.W_out[t_idx][d] -= self.lr * err * h[d]   # update W_out
+                grad_h[d] += err * u_old[d]  # grad for W_in
+                self.W_out[t_idx][d] -= self.lr * err * h[d]  # update W_out
 
         for d in range(self.vector_size):
-            self.W_in[center][d] -= self.lr * grad_h[d]        # update W_in
+            self.W_in[center][d] -= self.lr * grad_h[d]  # update W_in
 
         return loss
 
@@ -195,7 +286,8 @@ class Word2Vec:
         return [x / norm for x in avg]
 
 
-#  TF-IDF VECTORIZER 
+#  TF-IDF VECTORIZER
+
 
 class TFIDFVectorizer:
     def __init__(self):
@@ -243,8 +335,9 @@ def jaccard(t1, t2):
     return len(s1 & s2) / len(s1 | s2)
 
 
-def hybrid_similarity(tok1, tok2, tfidf1, tfidf2, w2v1, w2v2,
-                      alpha=0.4, beta=0.4, gamma=0.2):
+def hybrid_similarity(
+    tok1, tok2, tfidf1, tfidf2, w2v1, w2v2, alpha=0.4, beta=0.4, gamma=0.2
+):
     """
     alpha * TF-IDF cosine  (keyword match)
     beta  * Word2Vec cosine (semantic match)
@@ -256,8 +349,8 @@ def hybrid_similarity(tok1, tok2, tfidf1, tfidf2, w2v1, w2v2,
     return alpha * s_tfidf + beta * s_w2v + gamma * s_jac
 
 
-
 #  UNION-FIND CLUSTERING
+
 
 class UnionFind:
     def __init__(self, n):
@@ -289,26 +382,28 @@ def cluster_duplicates(sim_fn, n, threshold=0.55):
 
 #  REPRESENTATIVE TITLE SELECTION
 
+
 def pick_representative(group, sim_matrix):
     if len(group) == 1:
         return group[0]
     best_idx, best_score = group[0], -1.0
     for i in group:
         s = sum(sim_matrix[i][j] for j in group if j != i)
-        s /= (len(group) - 1)
+        s /= len(group) - 1
         if s > best_score:
             best_score, best_idx = s, i
     return best_idx
 
 
-
 # MAIN PIPELINE
-def deduplicate(input_csv='news_data.csv',
-                output_csv='deduped_news.csv',
-                threshold=0.55,
-                w2v_dim=100,
-                w2v_epochs=5,
-                w2v_window=3):
+def deduplicate(
+    input_csv="news_data.csv",
+    output_csv="deduped_news.csv",
+    threshold=0.55,
+    w2v_dim=100,
+    w2v_epochs=5,
+    w2v_window=3,
+):
 
     t0 = time.time()
 
@@ -326,16 +421,20 @@ def deduplicate(input_csv='news_data.csv',
     print("\n" + "=" * 60)
     print("STEP 2: Tokenizing")
     print("=" * 60)
-    tokenized = [tokenize(d['title']) for d in data]
+    tokenized = [tokenize(d["title"]) for d in data]
     print(f"Tokenized {len(tokenized)} documents")
 
     # ---------- Word2Vec ----------
     print("\n" + "=" * 60)
     print("STEP 3: Training Word2Vec (Skip-gram + Neg Sampling)")
     print("=" * 60)
-    w2v = Word2Vec(vector_size=w2v_dim, window=w2v_window,
-                   negative_samples=5, learning_rate=0.025,
-                   epochs=w2v_epochs)
+    w2v = Word2Vec(
+        vector_size=w2v_dim,
+        window=w2v_window,
+        negative_samples=5,
+        learning_rate=0.025,
+        epochs=w2v_epochs,
+    )
     w2v.build_vocab(tokenized)
     w2v.train(tokenized)
     w2v_doc_vecs = [w2v.doc_vector(toks) for toks in tokenized]
@@ -362,9 +461,12 @@ def deduplicate(input_csv='news_data.csv',
     for i in range(n):
         for j in range(i + 1, n):
             s = hybrid_similarity(
-                tokenized[i], tokenized[j],
-                tfidf_doc_vecs[i], tfidf_doc_vecs[j],
-                w2v_doc_vecs[i], w2v_doc_vecs[j]
+                tokenized[i],
+                tokenized[j],
+                tfidf_doc_vecs[i],
+                tfidf_doc_vecs[j],
+                w2v_doc_vecs[i],
+                w2v_doc_vecs[j],
             )
             sim_matrix[i][j] = s
             sim_matrix[j][i] = s
@@ -392,14 +494,11 @@ def deduplicate(input_csv='news_data.csv',
         kept.append(data[rep])
         for idx in g:
             if idx != rep:
-                removed.append((data[idx], data[rep]['title']))
+                removed.append((data[idx], data[rep]["title"]))
 
     # ---------- Save (FIX: lowercase fieldnames matching load_titles) ----------
-    with open(output_csv, 'w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(
-            f,
-            fieldnames=['source', 'category', 'title', 'url']
-        )
+    with open(output_csv, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["source", "category", "title", "url"])
         writer.writeheader()
         for row in kept:
             writer.writerow(row)
@@ -433,10 +532,10 @@ def deduplicate(input_csv='news_data.csv',
 
 if __name__ == "__main__":
     deduplicate(
-        input_csv='news_data.csv',
-        output_csv='deduped_news.csv',
+        input_csv="news_data.csv",
+        output_csv="deduped_news.csv",
         threshold=0.55,
         w2v_dim=100,
         w2v_epochs=5,
-        w2v_window=3
+        w2v_window=3,
     )

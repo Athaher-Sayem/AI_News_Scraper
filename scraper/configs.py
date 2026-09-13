@@ -1,11 +1,9 @@
 DAILY_STAR_CONFIG = {
-
     "title": [
         "h1",
         "h1.article-title",
         ".article-title h1",
     ],
-
     "content": [
         ".article-content",
         ".article-body",
@@ -13,14 +11,12 @@ DAILY_STAR_CONFIG = {
         ".node__content",
         "article",
     ],
-
     "author": [
         ".author-name",
         ".article-author",
         ".byline",
         "[class*='author']",
     ],
-
     "published_date": [
         "time",
         ".published-date",
@@ -28,7 +24,6 @@ DAILY_STAR_CONFIG = {
         ".date",
         "[class*='published']",
     ],
-
     "image": [
         ".article-image img",
         ".featured-image img",
@@ -39,14 +34,12 @@ DAILY_STAR_CONFIG = {
 
 
 DHAKA_TRIBUNE_CONFIG = {
-
     "title": [
         "h1",
         "h1.article-title",
         ".article-title h1",
         ".story-title",
     ],
-
     "content": [
         ".article-content",
         ".article-body",
@@ -54,7 +47,6 @@ DHAKA_TRIBUNE_CONFIG = {
         ".field-name-body",
         "article",
     ],
-
     "author": [
         ".author-name",
         ".article-author",
@@ -62,7 +54,6 @@ DHAKA_TRIBUNE_CONFIG = {
         ".story-author",
         "[class*='author']",
     ],
-
     "published_date": [
         "time",
         ".published-date",
@@ -70,7 +61,6 @@ DHAKA_TRIBUNE_CONFIG = {
         ".story-date",
         "[class*='published']",
     ],
-
     "image": [
         ".article-image img",
         ".featured-image img",
@@ -81,13 +71,11 @@ DHAKA_TRIBUNE_CONFIG = {
 
 
 BUSINESS_STANDARD_CONFIG = {
-
     "title": [
         "h1",
         "h1.article-title",
         ".article-title",
     ],
-
     "content": [
         ".field--name-body",
         ".field-name-body",
@@ -96,7 +84,6 @@ BUSINESS_STANDARD_CONFIG = {
         ".node__content",
         "article",
     ],
-
     "author": [
         ".author-name",
         ".author",
@@ -104,7 +91,6 @@ BUSINESS_STANDARD_CONFIG = {
         ".article-author",
         "[class*='author']",
     ],
-
     "published_date": [
         "time",
         ".published-date",
@@ -112,7 +98,6 @@ BUSINESS_STANDARD_CONFIG = {
         ".date",
         "[class*='published']",
     ],
-
     "image": [
         ".article-image img",
         ".featured-image img",
@@ -124,14 +109,12 @@ BUSINESS_STANDARD_CONFIG = {
 
 
 DAILY_SUN_CONFIG = {
-
     "title": [
         "h1",
         "h1.article-title",
         ".article-title",
         ".news-title",
     ],
-
     "content": [
         ".article-content",
         ".news-content",
@@ -140,7 +123,6 @@ DAILY_SUN_CONFIG = {
         ".article-body",
         "article",
     ],
-
     "author": [
         ".author-name",
         ".author",
@@ -148,7 +130,6 @@ DAILY_SUN_CONFIG = {
         ".byline",
         "[class*='author']",
     ],
-
     "published_date": [
         "time",
         ".published-date",
@@ -156,7 +137,6 @@ DAILY_SUN_CONFIG = {
         ".date",
         "[class*='published']",
     ],
-
     "image": [
         ".article-image img",
         ".featured-image img",

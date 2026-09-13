@@ -1,4 +1,4 @@
-# headers = { 
+# headers = {
 #     'User-Agent' : "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
 # }
 
@@ -17,7 +17,7 @@
 # print("Total headings found:", len(headings))
 
 # for h in headings[:5]:
-#     print(h.text.strip())    
+#     print(h.text.strip())
 
 
 # titles = soup.select(".tilte-no-link-parent")
@@ -65,7 +65,7 @@
 # for category in url_category:
 
 #     url = f"https://www.thedailystar.net/{url_category[idx]}"
-   
+
 
 #     with sync_playwright() as p:
 #         browser = p.chromium.launch(headless=True)
@@ -82,10 +82,10 @@
 
 #     main_area = soup.find("main") or soup.find("div" , {'id':'main-cotent'}) or soup
 #     articles = main_area.select("""
-#         h1 a, 
-#         h2 a, 
-#         h3 a, 
-#         h4 a, 
+#         h1 a,
+#         h2 a,
+#         h3 a,
+#         h4 a,
 #         h5 a,
 #         .title a,
 #         .card-title a
@@ -96,7 +96,7 @@
 
 #     print(f"This is form this type of {url_category[idx]}category")
 #     idx+=1
-    
+
 #     for a in articles:
 #         if a.find_parent(class_='header-news-card'):
 #             continue

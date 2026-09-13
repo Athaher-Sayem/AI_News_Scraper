@@ -1,4 +1,3 @@
-
 import pandas as pd
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -10,35 +9,35 @@ import re
 
 
 # LOAD DATA
-def load_data(path='news_data.csv'):
+def load_data(path="news_data.csv"):
     df = pd.read_csv(path)
     df.columns = [c.strip().lower() for c in df.columns]
-    df = df.dropna(subset=['title']).reset_index(drop=True)
-    df = df[df['title'].str.len() > 10].reset_index(drop=True)
+    df = df.dropna(subset=["title"]).reset_index(drop=True)
+    df = df[df["title"].str.len() > 10].reset_index(drop=True)
     print(f"Loaded {len(df)} titles")
     return df
 
 
- 
 # 2. LIGHT PREPROCESSING (only for normalization, not stopword removal)
- 
+
+
 def normalize(text):
     text = text.lower()
-    text = re.sub(r'[^a-z0-9\s]', ' ', text)
-    text = re.sub(r'\s+', ' ', text).strip()
+    text = re.sub(r"[^a-z0-9\s]", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
     return text
 
 
- 
 # 3. HYBRID SIMILARITY: SBERT (semantic) + TF-IDF (keyword)
- 
+
+
 def compute_hybrid_similarity(titles, sbert_weight=0.7, tfidf_weight=0.3):
     """
     SBERT captures meaning, TF-IDF captures exact keyword overlap.
     """
     # --- SBERT embeddings ---
     print("Loading Sentence-BERT model (all-MiniLM-L6-v2)...")
-    model = SentenceTransformer('all-MiniLM-L6-v2')
+    model = SentenceTransformer("all-MiniLM-L6-v2")
 
     print("Encoding titles with SBERT...")
     sbert_emb = model.encode(
@@ -46,7 +45,7 @@ def compute_hybrid_similarity(titles, sbert_weight=0.7, tfidf_weight=0.3):
         batch_size=32,
         show_progress_bar=True,
         normalize_embeddings=True,
-        convert_to_numpy=True
+        convert_to_numpy=True,
     )
     sbert_sim = cosine_similarity(sbert_emb)
 
@@ -57,7 +56,7 @@ def compute_hybrid_similarity(titles, sbert_weight=0.7, tfidf_weight=0.3):
         min_df=1,
         max_df=0.95,
         sublinear_tf=True,
-        stop_words='english'
+        stop_words="english",
     )
     tfidf_matrix = tfidf.fit_transform([normalize(t) for t in titles])
     tfidf_sim = cosine_similarity(tfidf_matrix)
@@ -68,9 +67,9 @@ def compute_hybrid_similarity(titles, sbert_weight=0.7, tfidf_weight=0.3):
     return hybrid
 
 
- 
 # 4. CLUSTERING (Agglomerative with precomputed distance)
- 
+
+
 def cluster_titles(sim_matrix, threshold=0.72):
     """
     Agglomerative clustering with cosine distance.
@@ -82,18 +81,18 @@ def cluster_titles(sim_matrix, threshold=0.72):
 
     clusterer = AgglomerativeClustering(
         n_clusters=None,
-        metric='precomputed',
-        linkage='average',
-        distance_threshold=1.0 - threshold
+        metric="precomputed",
+        linkage="average",
+        distance_threshold=1.0 - threshold,
     )
     labels = clusterer.fit_predict(distance)
     print(f"Formed {len(set(labels))} clusters")
     return labels
 
 
- 
 # 5. PICK REPRESENTATIVE TITLE PER CLUSTER
- 
+
+
 def pick_representatives(df, labels, sim_matrix):
     kept_rows = []
     group_summary = []
@@ -112,31 +111,33 @@ def pick_representatives(df, labels, sim_matrix):
         rep_idx = idxs[best_local]
 
         kept_rows.append(rep_idx)
-        group_summary.append({
-            'rep': df.iloc[rep_idx]['title'],
-            'members': [df.iloc[i]['title'] for i in idxs]
-        })
+        group_summary.append(
+            {
+                "rep": df.iloc[rep_idx]["title"],
+                "members": [df.iloc[i]["title"] for i in idxs],
+            }
+        )
 
     return kept_rows, group_summary
 
 
- 
 # 6. MAIN PIPELINE
- 
-def deduplicate(input_csv='news_data.csv',
-                output_csv='deduped_news.csv',
-                threshold=0.72):
+
+
+def deduplicate(
+    input_csv="news_data.csv", output_csv="deduped_news.csv", threshold=0.72
+):
 
     t0 = time.time()
     df = load_data(input_csv)
 
-    sim = compute_hybrid_similarity(df['title'].tolist())
+    sim = compute_hybrid_similarity(df["title"].tolist())
     labels = cluster_titles(sim, threshold=threshold)
 
     kept_idx, groups = pick_representatives(df, labels, sim)
     df_kept = df.iloc[kept_idx].reset_index(drop=True)
 
-    df_kept.to_csv(output_csv, index=False, encoding='utf-8')
+    df_kept.to_csv(output_csv, index=False, encoding="utf-8")
 
     print("\n" + "=" * 60)
     print("RESULT")
@@ -151,8 +152,8 @@ def deduplicate(input_csv='news_data.csv',
     for g in groups[:8]:
         print(f"\n[Group of {len(g['members'])}]")
         print(f"  ★ {g['rep']}")
-        for m in g['members']:
-            if m != g['rep']:
+        for m in g["members"]:
+            if m != g["rep"]:
                 print(f"    - {m}")
 
     return df_kept, groups
@@ -160,7 +161,7 @@ def deduplicate(input_csv='news_data.csv',
 
 if __name__ == "__main__":
     deduplicate(
-        input_csv='news_data.csv',
-        output_csv='deduped_news.csv',
-        threshold=0.72      # SBERT  0.70-0.78 
+        input_csv="news_data.csv",
+        output_csv="deduped_news.csv",
+        threshold=0.72,  # SBERT  0.70-0.78
     )
