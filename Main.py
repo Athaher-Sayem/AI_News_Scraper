@@ -1,11 +1,7 @@
 from Daily_Star import dailystar_base_url, dailystar_categories
-
 from Dhaka_Tribune import dhakatribune_base_url, dhakatribune_categories
-
 from The_Business_Standard import theBusinessStandard_categories,theBusinessStandard_base_url
-
 from Daily_Sun import dailysun_base_url,dailysun_categories
-
 from Scraper import news_collect
 
 if __name__ == "__main__":
@@ -41,7 +37,6 @@ if __name__ == "__main__":
     #             "Daily Sun",
     #             csv_file,
     #         )
-
 
 
 
