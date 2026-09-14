@@ -114,3 +114,18 @@
 #             print(f"{count}. {title}")
 #             # print(f"   {full_url}\n")
 #             count += 1
+
+from ai.llm import generate_text
+
+
+prompt = """
+Write a short professional news article
+about a technology event in Bangladesh.
+
+Keep it factual and professional.
+"""
+
+
+result = generate_text(prompt)
+
+print(result)
