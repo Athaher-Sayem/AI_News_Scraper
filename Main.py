@@ -1,73 +1,44 @@
-# from Daily_Star import dailystar_base_url, dailystar_categories
-# from Dhaka_Tribune import dhakatribune_base_url, dhakatribune_categories
-# from The_Business_Standard import (
-#     theBusinessStandard_categories,
-#     theBusinessStandard_base_url,
-# )
-# from Daily_Sun import dailysun_base_url, dailysun_categories
-# from Scraper import news_collect
+import os
+import django
 
 
-# if __name__ == "__main__":
+# ============================================================
+# DJANGO SETUP
+# ============================================================
 
-#     csv_file = "news_data.csv"
+os.environ.setdefault(
+    "DJANGO_SETTINGS_MODULE",
+    "config.settings",
+)
 
-#     # Daily Star
-#     daily_star_count = news_collect(
-#         dailystar_categories,
-#         dailystar_base_url,
-#         "The Daily Star",
-#         csv_file,
-#     )
+django.setup()
 
-#     print(f"\nThe Daily Star: {daily_star_count} new titles collected.")
 
-#     # Dhaka Tribune
-#     dhaka_tribune_count = news_collect(
-#         dhakatribune_categories,
-#         dhakatribune_base_url,
-#         "Dhaka Tribune",
-#         csv_file,
-#     )
+# ============================================================
+# PROJECT PATH
+# ============================================================
 
-#     print(f"\nDhaka Tribune: {dhaka_tribune_count} new titles collected.")
+BASE_DIR = os.path.dirname(
+    os.path.abspath(__file__)
+)
 
-#     # The Business Standard
-#     business_standard_count = news_collect(
-#         theBusinessStandard_categories,
-#         theBusinessStandard_base_url,
-#         "The Business Standard",
-#         csv_file,
-#     )
+CSV_PATH = os.path.join(
+    BASE_DIR,
+    "data",
+    "news_data.csv",
+)
 
-#     print(
-#         f"\nThe Business Standard: "
-#         f"{business_standard_count} new titles collected."
-#     )
 
-#     # Daily Sun
-#     # daily_sun_count = news_collect(
-#     #     dailysun_categories,
-#     #     dailysun_base_url,
-#     #     "Daily Sun",
-#     #     csv_file,
-#     # )
-
-#     # Total new titles
-#     total = (
-#         daily_star_count
-#         + dhaka_tribune_count
-#         + business_standard_count
-#     )
-
-#     print("\n===================================")
-#     print(f"TOTAL NEW TITLES COLLECTED: {total}")
-#     print("===================================")
-
-#     print(f"\nAll news successfully extracted and saved to '{csv_file}'!")
-
+# ============================================================
+# IMPORT SCRAPER
+# ============================================================
 
 from scraper.scraper import news_collect
+
+
+# ============================================================
+# IMPORT CONFIGS
+# ============================================================
 
 from scraper.configs import (
     DAILY_STAR_CONFIG,
@@ -75,6 +46,11 @@ from scraper.configs import (
     BUSINESS_STANDARD_CONFIG,
     DAILY_SUN_CONFIG,
 )
+
+
+# ============================================================
+# IMPORT SOURCES
+# ============================================================
 
 from sources.Daily_Star import (
     dailystar_base_url,
@@ -106,7 +82,7 @@ news_collect(
     dailystar_base_url,
     "Daily Star",
     DAILY_STAR_CONFIG,
-    "news_data.csv",
+    CSV_PATH,
 )
 
 
@@ -119,7 +95,7 @@ news_collect(
     dhakatribune_base_url,
     "Dhaka Tribune",
     DHAKA_TRIBUNE_CONFIG,
-    "news_data.csv",
+    CSV_PATH,
 )
 
 
@@ -132,7 +108,7 @@ news_collect(
     theBusinessStandard_base_url,
     "The Business Standard",
     BUSINESS_STANDARD_CONFIG,
-    "news_data.csv",
+    CSV_PATH,
 )
 
 
@@ -145,5 +121,5 @@ news_collect(
     dailysun_base_url,
     "Daily Sun",
     DAILY_SUN_CONFIG,
-    "news_data.csv",
+    CSV_PATH,
 )
