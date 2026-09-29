@@ -18,25 +18,15 @@ Officials said the program will initially train
 """
 
 
-result = process_news(
-    title,
-    content
-)
+if __name__ == "__main__":
+    result = process_news(title, content)
 
-
-print("\n")
-print("==============================")
-print("FINAL RESULT")
-print("==============================")
-
-
-print("\nStatus:")
-print(result["status"])
-
-
-print("\nGenerated Article:")
-print(result["generated_article"])
-
-
-print("\nVerification:")
-print(result["verification"])
+    print("\n==============================")
+    print("FINAL RESULT")
+    print("==============================")
+    print("\nStatus:")
+    print(result["status"])
+    print("\nGenerated Article:")
+    print(result.get("generated_article", ""))
+    print("\nVerification:")
+    print(result.get("verification", result.get("error", "")))

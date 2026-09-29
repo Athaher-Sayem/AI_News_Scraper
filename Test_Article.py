@@ -19,26 +19,15 @@ Officials said the program will initially train
 """
 
 
-print("Extracting facts...")
+if __name__ == "__main__":
+    print("Extracting facts...")
+    facts = extract_facts(title, content)
 
-facts = extract_facts(
-    title,
-    content
-)
+    print("\nFacts:")
+    print(facts)
 
+    print("\nGenerating article...")
+    article = generate_article(title, content, facts)
 
-print("\nFacts:")
-print(facts)
-
-
-print("\nGenerating article...")
-
-article = generate_article(
-    title,
-    content,
-    facts
-)
-
-
-print("\nGenerated Article:")
-print(article)
+    print("\nGenerated Article:")
+    print(article)

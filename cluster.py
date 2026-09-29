@@ -1,12 +1,14 @@
 import pandas as pd
+from pathlib import Path
 from sentence_transformers import SentenceTransformer
 from sklearn.cluster import KMeans
 
 # ১. CSV লোড এবং ডুপ্লিকেট/ফাঁকা ডেটা বাদ দেওয়া
-df = pd.read_csv("news_data.csv")
-df.drop_duplicates(subset=["Title"], inplace=True)
-df.dropna(subset=["Title"], inplace=True)
-titles = df["Title"].tolist()
+df = pd.read_csv(Path(__file__).resolve().parent / "data" / "news_data.csv")
+df.columns = [column.strip().lower() for column in df.columns]
+df.drop_duplicates(subset=["title"], inplace=True)
+df.dropna(subset=["title"], inplace=True)
+titles = df["title"].tolist()
 
 print(f"Total Unique Titles: {len(titles)}")
 
@@ -26,7 +28,7 @@ print("\nClustering complete! Saved to clustered_news.csv\n")
 
 # ৫. প্রতিটি ক্লাস্টারের খবরের নমুনা নিয়ে প্রম্পট প্রিন্ট করা
 for cluster_id in range(num_clusters):
-    samples = df[df["Cluster_ID"] == cluster_id]["Title"].head(5).tolist()
+    samples = df[df["Cluster_ID"] == cluster_id]["title"].head(5).tolist()
 
     prompt = f"""--- Cluster {cluster_id} Prompt ---
 Here are some news headlines from a single topic cluster:

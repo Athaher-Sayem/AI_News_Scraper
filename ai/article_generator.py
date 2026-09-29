@@ -32,8 +32,11 @@ IMPORTANT RULES:
 11. Use professional newspaper language.
 12. Write naturally.
 13. Create a new headline.
-14. The generated article must remain faithful
-    to the original news.
+14. Write approximately 500 words.
+15. Do not make the article shorter than 450 words.
+16. Do not make the article longer than 600 words.
+17. Use only information supported by the original content
+    and extracted facts.
 
 Return ONLY this format:
 

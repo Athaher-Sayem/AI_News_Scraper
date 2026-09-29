@@ -18,6 +18,6 @@ Officials said the program will initially train
 """
 
 
-facts = extract_facts(title, content)
-
-print(facts)
+if __name__ == "__main__":
+    facts = extract_facts(title, content)
+    print(facts)
