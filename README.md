@@ -110,6 +110,25 @@ The specification is generated from the same code that serves the API
 documented, every `$ref` resolves, and the documented enums and limits match
 the server-side validation.
 
+## Git workflow
+
+Every change is committed and pushed immediately: run the checks, commit, and
+push in one step. The repository enables `core.hooksPath = .githooks`, so the
+tracked `post-commit` hook pushes each new commit to its branch on `origin`
+automatically — you never need to run `git push` by hand.
+
+After cloning, activate the hook once:
+
+```powershell
+git config core.hooksPath .githooks
+```
+
+To go back to manual pushing:
+
+```powershell
+git config core.hooksPath .git/hooks
+```
+
 Queue a run:
 
 ```powershell

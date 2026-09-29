@@ -1,0 +1,17 @@
+#!/bin/sh
+# Push each new commit to its branch on origin as soon as it is created.
+# Disable with: git config core.hooksPath .git/hooks
+
+branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+if [ -z "$branch" ] || [ "$branch" = "HEAD" ]; then
+    exit 0
+fi
+
+output=$(git push --quiet origin "HEAD:refs/heads/$branch" 2>&1)
+status=$?
+if [ $status -ne 0 ]; then
+    echo "post-commit: push failed (check network or remote):"
+    echo "$output"
+fi
+
+exit 0
