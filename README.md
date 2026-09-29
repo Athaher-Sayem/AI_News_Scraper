@@ -94,6 +94,21 @@ every endpoint except `health/`.
 | GET | `/api/v1/processed/{row}/` | One processing result by CSV row |
 | GET/POST | `/api/v1/pipeline/runs/` | List runs, or queue a new run |
 | GET | `/api/v1/pipeline/runs/{id}/` | Run status, summary, and error |
+| GET | `/api/v1/openapi.json` | Raw OpenAPI 3 document for the API |
+| GET | `/api/v1/docs/` | Swagger UI for the API |
+
+### Interactive documentation
+
+Start the server and open <http://127.0.0.1:8000/api/v1/docs/> for Swagger UI
+(loaded from the unpkg CDN, so the machine needs internet access the first time).
+The underlying specification is always available as JSON at
+`/api/v1/openapi.json`; both endpoints stay public even when `NEWS_API_KEY`
+is configured, and Swagger UI's "Try it out" works against every endpoint.
+
+The specification is generated from the same code that serves the API
+(`news/api/openapi.py`), and tests assert that every route in the URLconf is
+documented, every `$ref` resolves, and the documented enums and limits match
+the server-side validation.
 
 Queue a run:
 

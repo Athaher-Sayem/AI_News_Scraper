@@ -13,4 +13,6 @@ urlpatterns = [
     path("processed/<int:row>/", views.processed_detail, name="processed-detail"),
     path("pipeline/runs/", views.runs, name="run-list"),
     path("pipeline/runs/<str:run_id>/", views.run_detail, name="run-detail"),
+    path("openapi.json", views.openapi_spec, name="openapi"),
+    path("docs/", views.api_docs, name="docs"),
 ]

@@ -1,7 +1,21 @@
+from django.http import HttpResponse, JsonResponse
 from django.urls import reverse
+from django.views.decorators.http import require_GET
 
 from news.api import jobs, services
 from news.api.http import ApiError, api_view
+from news.api.openapi import DOCS_HTML, build_spec
+
+
+@require_GET
+def openapi_spec(request):
+    """Raw OpenAPI document (not wrapped in the data envelope)."""
+    return JsonResponse(build_spec())
+
+
+@require_GET
+def api_docs(request):
+    return HttpResponse(DOCS_HTML, content_type="text/html; charset=utf-8")
 
 
 @api_view(["GET"], public=True)
