@@ -115,7 +115,9 @@ the server-side validation.
 Every change is committed and pushed immediately: run the checks, commit, and
 push in one step. The repository enables `core.hooksPath = .githooks`, so the
 tracked `post-commit` hook pushes each new commit to its branch on `origin`
-automatically — you never need to run `git push` by hand.
+automatically — you never need to run `git push` by hand. The hook also
+fast-forwards `main` (when possible) so the GitHub homepage always shows the
+latest code.
 
 After cloning, activate the hook once:
 

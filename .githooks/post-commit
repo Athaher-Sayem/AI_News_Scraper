@@ -1,5 +1,6 @@
 #!/bin/sh
-# Push each new commit to its branch on origin as soon as it is created.
+# Push each new commit to its branch on origin as soon as it is created,
+# and fast-forward main so the GitHub homepage always shows the latest code.
 # Disable with: git config core.hooksPath .git/hooks
 
 branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
@@ -12,6 +13,15 @@ status=$?
 if [ $status -ne 0 ]; then
     echo "post-commit: push failed (check network or remote):"
     echo "$output"
+fi
+
+if [ "$branch" != "main" ]; then
+    ff=$(git push --quiet origin "HEAD:refs/heads/main" 2>&1)
+    ff_status=$?
+    if [ $ff_status -ne 0 ]; then
+        echo "post-commit: main not fast-forwarded (diverged or offline):"
+        echo "$ff"
+    fi
 fi
 
 exit 0
