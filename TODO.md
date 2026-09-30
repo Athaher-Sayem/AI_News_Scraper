@@ -135,6 +135,12 @@ version, as requested by the roadmap; they are not implied by an empty module.
 
 ## Verification log
 
+- R09a: parser cleaning no longer destroys author/date metadata. HTTP error and
+  contentless pages are rejected; ISO time attributes and absolute image URLs are
+  retained. External/non-HTTP links are ignored and fragments do not create URL
+  duplicates. Tested all four configured selector sets, Bangla, missing images,
+  403/404/429/503, collection → real test DB → CSV, and repeat runs (51 tests).
+  These are controlled fixtures, not claims about current publisher layouts.
 - R08: result CSVs are flushed to a same-directory temporary file and atomically
   replaced. A simulated partial write/disk failure preserves the prior file and
   removes temporary output; a reader sees the prior snapshot until the complete

@@ -1,7 +1,7 @@
 import csv
 import os
 from datetime import datetime
-from urllib.parse import urljoin
+from urllib.parse import urldefrag, urljoin, urlsplit
 
 from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright
@@ -84,6 +84,10 @@ def get_content(soup, selectors):
 
     if not content_area:
         return ""
+
+    # Cleaning must not remove author/date/image elements from the original
+    # document before the metadata selectors inspect them.
+    content_area = BeautifulSoup(str(content_area), "html.parser")
 
     # --------------------------------------------------------
     # REMOVE UNWANTED ELEMENTS
@@ -171,11 +175,13 @@ def scrape_article(
 
     try:
 
-        page.goto(
+        response = page.goto(
             article_url,
             wait_until="domcontentloaded",
             timeout=60000,
         )
+        if response is not None and response.status >= 400:
+            raise ValueError(f"Article returned HTTP {response.status}")
 
         page.wait_for_timeout(
             1000
@@ -201,6 +207,8 @@ def scrape_article(
             soup,
             config["content"]
         )
+        if not content:
+            raise ValueError("Article has no extractable content")
 
         # ----------------------------------------------------
         # AUTHOR
@@ -213,7 +221,7 @@ def scrape_article(
         # ----------------------------------------------------
         # PUBLISHED DATE
         # ----------------------------------------------------
-        published_date = get_text(
+        published_date = get_attribute(soup, config["published_date"], "datetime") or get_text(
             soup,
             config["published_date"]
         )
@@ -239,6 +247,9 @@ def scrape_article(
                 ],
                 "content"
             )
+
+        if image_url:
+            image_url = urljoin(article_url, image_url)
 
         # ----------------------------------------------------
         # LANGUAGE
@@ -384,11 +395,13 @@ def news_collect(
             # ------------------------------------------------
             try:
 
-                category_page.goto(
+                response = category_page.goto(
                     target_url,
                     wait_until="domcontentloaded",
                     timeout=60000,
                 )
+                if response is not None and response.status >= 400:
+                    raise ValueError(f"Category returned HTTP {response.status}")
 
                 category_page.wait_for_selector(
                     "main, #main-content, body",
@@ -489,10 +502,10 @@ def news_collect(
                 # ------------------------------------------------
                 # MAKE FULL URL
                 # ------------------------------------------------
-                article_url = urljoin(
-                    base_url,
-                    href
-                )
+                article_url = urldefrag(urljoin(target_url, href.strip()))[0]
+                parsed_url = urlsplit(article_url)
+                if parsed_url.scheme not in ("http", "https") or parsed_url.hostname != urlsplit(base_url).hostname:
+                    continue
 
                 # ------------------------------------------------
                 # SAME PAGE DUPLICATE
