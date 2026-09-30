@@ -159,14 +159,14 @@ def list_processed(query):
             400,
             {"parameter": "status", "allowed": sorted(STATUSES)},
         )
-    rows = read_processed_rows()
+    rows = list(enumerate(read_processed_rows()))
     if status:
-        rows = [row for row in rows if row.get("status", "") == status]
+        rows = [(index, row) for index, row in rows if row.get("status", "") == status]
     if query.get("source"):
-        rows = [row for row in rows if row.get("source", "") == query["source"]]
+        rows = [(index, row) for index, row in rows if row.get("source", "") == query["source"]]
     term = _search_term(query)
     if term:
-        rows = [row for row in rows if term.lower() in row.get("title", "").lower()]
+        rows = [(index, row) for index, row in rows if term.lower() in row.get("title", "").lower()]
 
     page = _int_param(query, "page", 1)
     page_size = _int_param(query, "page_size", 20, maximum=MAX_PAGE_SIZE)
@@ -174,7 +174,7 @@ def list_processed(query):
     start = (page - 1) * page_size
     window = rows[start : start + page_size]
     return {
-        "items": [serialize_processed(row, start + offset) for offset, row in enumerate(window)],
+        "items": [serialize_processed(row, index) for index, row in window],
         "meta": {
             "page": page,
             "page_size": page_size,

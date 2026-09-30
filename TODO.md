@@ -24,7 +24,7 @@ version, as requested by the roadmap; they are not implied by an empty module.
   existing tests, running services, and default workflow. Commit this checklist.
 - [x] R02: Validate pipeline paths before work begins: reject overwriting code,
   credentials, the database, or raw input; preserve valid CSV/CLI usage.
-- [ ] R03: Verify processed-result filtering and pagination return stable row
+- [x] R03: Verify processed-result filtering and pagination return stable row
   identifiers that resolve to the same detail resource.
 - [ ] R04: Verify request validation/authentication and error envelopes: malformed
   JSON/encoding, wrong content types, query bounds, method handling, and failures.
@@ -135,6 +135,10 @@ version, as requested by the roadmap; they are not implied by an empty module.
 
 ## Verification log
 
+- R03: fixed filtered CSV results being renumbered (a listed row could open an
+  unrelated detail). Source row indexes now survive every filter and page.
+  Status/source/search/combined filters, second-page detail equality, empty pages,
+  and the related API/flow tests passed (42 tests).
 - R02: restricted flow/API paths to resolved `.csv` files beneath `data/`;
   rejected code/credential/database paths, directories, malformed paths and raw
   hardlink aliases before work starts. Valid CSV → content-check → result-save

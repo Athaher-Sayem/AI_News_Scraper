@@ -218,6 +218,19 @@ class ProcessedEndpointTests(ApiTestCase):
             self.assertEqual(data["meta"]["total"], 0)
             self.assertEqual(data["items"], [])
 
+    def test_filtered_and_paginated_rows_resolve_to_the_same_detail(self):
+        queries = ("status=CONTENT_REJECTED", "source=Dhaka+Tribune", "q=short",
+                   "page_size=1&page=2", "status=CONTENT_REJECTED&source=Dhaka+Tribune&q=short")
+        for query in queries:
+            with self.subTest(query=query):
+                response = self.client.get("/api/v1/processed/?" + query)
+                row = self.data(response)["items"][0]
+                self.assertEqual(row["row"], 1)
+                detail = self.client.get(f"/api/v1/processed/{row['row']}/")
+                self.assertEqual(self.data(detail), row)
+        response = self.client.get("/api/v1/processed/?page=99")
+        self.assertEqual(self.data(response)["items"], [])
+
     def test_rejects_unknown_status_filter(self):
         response = self.client.get("/api/v1/processed/?status=NOT_A_STATUS")
         self.assertEqual(response.status_code, 400)
