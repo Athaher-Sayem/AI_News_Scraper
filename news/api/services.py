@@ -52,7 +52,7 @@ def _int_param(query, name, default, maximum=None):
     if value < 1 or (maximum is not None and value > maximum):
         raise ApiError(
             "invalid_query_parameter",
-            f"{name} must be between 1 and {maximum}",
+            f"{name} must be between 1 and {maximum}" if maximum is not None else f"{name} must be positive",
             400,
             {"parameter": name, "maximum": maximum},
         )
@@ -120,7 +120,8 @@ def list_articles(query):
     page = _int_param(query, "page", 1)
     page_size = _int_param(query, "page_size", 20, maximum=MAX_PAGE_SIZE)
     total = queryset.count()
-    page_items = list(queryset[(page - 1) * page_size : page * page_size])
+    start = (page - 1) * page_size
+    page_items = list(queryset[start : start + page_size]) if start < total else []
     return {
         "items": [serialize_article(item) for item in page_items],
         "meta": {

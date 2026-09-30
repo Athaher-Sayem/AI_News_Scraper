@@ -122,6 +122,13 @@ class ArticleEndpointTests(ApiTestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(self.error(response)["code"], "not_found")
 
+    def test_huge_page_is_empty_without_overflowing_database_offset(self):
+        make_article()
+        response = self.client.get("/api/v1/articles/", {"page": str(10 ** 30)})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.data(response)["items"], [])
+        self.assertEqual(self.data(response)["meta"]["total"], 1)
+
     def test_method_not_allowed_sets_allow_header(self):
         response = self.client.post("/api/v1/articles/", data="{}", content_type="application/json")
         self.assertEqual(response.status_code, 405)

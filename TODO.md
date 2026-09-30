@@ -135,6 +135,9 @@ version, as requested by the roadmap; they are not implied by an empty module.
 
 ## Verification log
 
+- R04b: out-of-range article pages return an empty page without passing enormous
+  SQL offsets to SQLite. Negative/invalid bounds still reject correctly; checked
+  list/detail/auth/run/review integration (26 tests passed).
 - R04a: malformed encodings now return `invalid_json`; misleading content types
   are rejected; non-ASCII invalid API keys return 401 rather than crashing.
   Internal type/serialization errors are server errors, not client validation
