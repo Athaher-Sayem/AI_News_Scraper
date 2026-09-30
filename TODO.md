@@ -34,7 +34,7 @@ version, as requested by the roadmap; they are not implied by an empty module.
   thread startup errors, shutdown behavior, and documented persistence limits.
 - [x] R07: Verify AI transport/JSON parsing, missing/malformed responses, content
   validation, strict approval, rejection, and continued processing after errors.
-- [ ] R08: Verify result persistence: empty inputs, stale output, failed writes,
+- [x] R08: Verify result persistence: empty inputs, stale output, failed writes,
   source preservation, Unicode, and concurrent API reads while saving.
 - [ ] R09: Verify scraper extraction/cleaning, HTTP failures, source configuration,
   URL deduplication, and database/CSV consistency with controlled fixtures.
@@ -135,6 +135,11 @@ version, as requested by the roadmap; they are not implied by an empty module.
 
 ## Verification log
 
+- R08: result CSVs are flushed to a same-directory temporary file and atomically
+  replaced. A simulated partial write/disk failure preserves the prior file and
+  removes temporary output; a reader sees the prior snapshot until the complete
+  Unicode CSV is ready. Low-level input/output hardlinks are rejected. Empty,
+  invalid input, stale result, transport failure, API, and flow tests passed (60).
 - R07b: structured facts must be a nonempty object; verification must contain
   boolean approval, and explicit errors/invented facts override approval.
   The manual demo now handles transport failures and uses strict approval too.

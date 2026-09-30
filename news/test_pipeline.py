@@ -135,6 +135,32 @@ class PipelineTests(unittest.TestCase):
             run_pipeline(self.input, self.output)
         self.assertEqual(self.output.read_bytes(), before)
 
+    def test_failed_write_preserves_previous_results_and_cleans_temporary_file(self):
+        self.run_rows([self.news])
+        before = self.output.read_bytes()
+        def broken_write(frame, handle, **kwargs):
+            handle.write("partial CSV")
+            raise OSError("Disk full")
+        with patch.object(pd.DataFrame, "to_csv", broken_write), self.assertRaises(OSError):
+            run_pipeline(self.input, self.output)
+        self.assertEqual(self.output.read_bytes(), before)
+        self.assertEqual(list(self.output.parent.glob("*.tmp")), [])
+
+    def test_reader_sees_old_snapshot_until_unicode_output_is_complete(self):
+        self.run_rows([self.news])
+        before = self.output.read_bytes()
+        self.article.return_value = "বাংলা সংবাদ — verified Unicode output"
+        from utils.csv_utils import os
+        replace = os.replace
+        def inspect_before_replace(source, target):
+            self.assertEqual(self.output.read_bytes(), before)
+            completed = pd.read_csv(source)
+            self.assertEqual(completed.iloc[0]["generated_article"], self.article.return_value)
+            replace(source, target)
+        with patch("utils.csv_utils.os.replace", side_effect=inspect_before_replace):
+            result = run_pipeline(self.input, self.output)
+        self.assertEqual(pd.read_csv(self.output).iloc[0]["generated_article"], result.iloc[0]["generated_article"])
+
 
 class MainTests(unittest.TestCase):
     def test_import_does_not_run_pipeline(self):

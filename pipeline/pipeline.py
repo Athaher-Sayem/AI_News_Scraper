@@ -8,6 +8,7 @@ from pipeline.content_checker import check_content
 from ai.fact_extractor import extract_facts
 from ai.article_generator import generate_article
 from ai.fact_verifier import verify_article
+from utils.csv_utils import write_csv_atomic
 
 
 RESULT_COLUMNS = ("status", "reason", "facts", "generated_article", "verification")
@@ -56,7 +57,7 @@ def run_pipeline(input_csv, output_csv, limit=None):
     """Process every input row, or an explicit positive limit, and save results."""
     input_path = Path(input_csv).resolve()
     output_path = Path(output_csv).resolve()
-    if input_path == output_path:
+    if input_path == output_path or (output_path.exists() and input_path.samefile(output_path)):
         raise ValueError("Input and output CSV paths must be different")
     if limit is not None and (isinstance(limit, bool) or not isinstance(limit, int) or limit < 1):
         raise ValueError("limit must be a positive integer or None")
@@ -83,8 +84,7 @@ def run_pipeline(input_csv, output_csv, limit=None):
         print("Status:", result["status"])
 
     result_df = pd.DataFrame(results, columns=columns)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    result_df.to_csv(output_path, index=False, encoding="utf-8-sig")
+    write_csv_atomic(result_df, output_path)
     print("Processed:", len(result_df))
     print("Approved:", int((result_df["status"] == "APPROVED").sum()))
     print("Saved:", output_path)
