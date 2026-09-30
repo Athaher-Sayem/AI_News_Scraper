@@ -1,0 +1,36 @@
+{% extends 'news/base.html' %}
+{% block content %}
+<section class="intro">
+  <p class="eyebrow">THE SOURCE DESK</p>
+  <h1>Follow the story.</h1>
+  <p>Explore collected headlines in English and Bangla, with a direct link to every source.</p>
+</section>
+<form method="get" class="filters" aria-label="Filter articles">
+  <label>Search<input name="q" value="{{ query }}" maxlength="200" placeholder="Headlines, topics, people…"></label>
+  <label>Category<select name="category"><option value="">All categories</option>
+    {% for value in categories %}<option value="{{ value }}" {% if value == category %}selected{% endif %}>{{ value }}</option>{% endfor %}
+  </select></label>
+  <label>Language<select name="language"><option value="">All languages</option>
+    {% for value in languages %}<option value="{{ value }}" {% if value == language %}selected{% endif %}>{{ value }}</option>{% endfor %}
+  </select></label>
+  <button type="submit">Find stories</button><a href="{% url 'news:home' %}">Clear</a>
+</form>
+<div class="section-heading"><h2>Latest collection</h2><span>{{ page.paginator.count }} stories</span></div>
+<section class="stories" aria-label="Collected stories">
+  {% for article in page %}
+  <article class="story">
+    <p class="eyebrow">{{ article.category|default:'News' }} · {{ article.language }}</p>
+    <h3><a href="{% url 'news:detail' article.pk %}">{{ article.title }}</a></h3>
+    <p>{{ article.content|truncatewords:35 }}</p>
+    <div class="byline">{{ article.source }} · Collected {{ article.scraped_date|date:'d M Y' }}</div>
+  </article>
+  {% empty %}<p class="empty">No stories match this selection. Try another search or collect your first source.</p>{% endfor %}
+</section>
+{% if page.has_other_pages %}
+<nav class="pagination" aria-label="Article pages">
+  {% if page.has_previous %}<a href="?{{ filters }}&amp;page={{ page.previous_page_number }}">← Previous</a>{% endif %}
+  <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+  {% if page.has_next %}<a href="?{{ filters }}&amp;page={{ page.next_page_number }}">Next →</a>{% endif %}
+</nav>
+{% endif %}
+{% endblock %}

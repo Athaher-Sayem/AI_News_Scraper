@@ -74,6 +74,11 @@ Start the Django development server with:
 .\.venv\Scripts\python.exe manage.py runserver
 ```
 
+Open <http://127.0.0.1:8000/> for the source collection homepage. It supports
+headline/content search, category and language filters, pagination, and attributed
+excerpt pages linking to the original publisher. These pages display collected
+source records; they do not publish generated drafts or imply editorial approval.
+
 ## HTTP API
 
 All endpoints live under `/api/v1/` and return JSON. Successful responses use

@@ -1,0 +1,14 @@
+{% extends 'news/base.html' %}
+{% block title %}{{ article.title }} · Newsroom{% endblock %}
+{% block content %}
+<article class="detail">
+  <a href="{% url 'news:home' %}">← Back to latest collection</a>
+  <p class="eyebrow">{{ article.category|default:'News' }} · {{ article.language }}</p>
+  <h1>{{ article.title }}</h1>
+  <p class="byline">{{ article.source }}{% if article.author %} · {{ article.author }}{% endif %}</p>
+  {% if article.published_date %}<p>Source date: {{ article.published_date }}</p>{% endif %}
+  <p class="notice">Source excerpt · This is a collected source article, not an approved newspaper publication.</p>
+  <div class="excerpt">{{ article.content|truncatewords:100|linebreaks }}</div>
+  <a class="source-link" href="{{ article.url }}" rel="noopener noreferrer">Read the full story at {{ article.source }} ↗</a>
+</article>
+{% endblock %}

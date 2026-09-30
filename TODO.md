@@ -40,7 +40,7 @@ version, as requested by the roadmap; they are not implied by an empty module.
   URL deduplication, and database/CSV consistency with controlled fixtures.
 - [x] R10: Verify semantic deduplication boundaries, invalid titles, small inputs,
   identical/non-English titles, and reproducible output on the available dataset.
-- [ ] R11: Review first-version foundation gaps; deliver the smallest coherent
+- [x] R11: Review first-version foundation gaps; deliver the smallest coherent
   increment with integration tests rather than implement all roadmap stages.
 - [ ] R12: Review settings/secrets, dependencies, operator documentation, Git
   workflow claims, and repeatable local/CI checks; fix confirmed issues separately.
@@ -135,6 +135,14 @@ version, as requested by the roadmap; they are not implied by an empty module.
 
 ## Verification log
 
+- R11: added the missing simple aggregator homepage and attributed excerpt/detail
+  pages using the existing News table. Search/category/language filters, paging,
+  empty/missing pages, source-text escaping and existing API integration passed
+  (45 tests). Live Chromium verified home/detail at 1280px and 390px and the
+  existing Swagger page. This is a source collection, not automatic publication.
+  Foundation gaps remain: source persistence/fifth source, classification,
+  persistent story clusters, and verified PostgreSQL integration. The broader
+  first-version gate and roadmap items remain unchecked accordingly.
 - R10: dedup CSV loading preserves strings, handles numeric titles and missing
   headers, retains Bangla Unicode letters/marks during normalization, protects
   hardlink aliases, and uses atomic output. 41 relevant tests passed. Two real
