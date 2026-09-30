@@ -32,7 +32,7 @@ version, as requested by the roadmap; they are not implied by an empty module.
   nullable responses; check route coverage and browser rendering.
 - [x] R06: Verify job lifecycle, failure summaries, concurrent submissions,
   thread startup errors, shutdown behavior, and documented persistence limits.
-- [ ] R07: Verify AI transport/JSON parsing, missing/malformed responses, content
+- [x] R07: Verify AI transport/JSON parsing, missing/malformed responses, content
   validation, strict approval, rejection, and continued processing after errors.
 - [ ] R08: Verify result persistence: empty inputs, stale output, failed writes,
   source preservation, Unicode, and concurrent API reads while saving.
@@ -135,6 +135,12 @@ version, as requested by the roadmap; they are not implied by an empty module.
 
 ## Verification log
 
+- R07b: structured facts must be a nonempty object; verification must contain
+  boolean approval, and explicit errors/invented facts override approval.
+  The manual demo now handles transport failures and uses strict approval too.
+  Fenced JSON, invalid types, contradictions, rejections, batch continuation,
+  and API/job integration passed (50 tests). Content length remains an explicitly
+  documented generation target; semantic factual accuracy needs editorial review.
 - R07a: AI transport rejects missing, non-string, empty, error, invalid-JSON, and
   truncated responses as stage failures instead of uncaught KeyError/AttributeError.
   Applied the existing configured output-token limit. Verified each of the three

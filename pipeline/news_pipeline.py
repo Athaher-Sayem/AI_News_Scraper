@@ -1,68 +1,33 @@
+from requests.exceptions import RequestException
+
 from ai.fact_extractor import extract_facts
 from ai.article_generator import generate_article
 from ai.fact_verifier import verify_article
 
 
 def process_news(title, content):
+    """Process the manual demo input, preserving its public result contract."""
+    stage = "fact_extraction"
+    try:
+        facts = extract_facts(title, content)
+        if not isinstance(facts, dict) or not facts or "error" in facts:
+            return {"status": "failed", "stage": stage, "error": facts}
 
-    print("\n==============================")
-    print("STARTING NEWS PIPELINE")
-    print("==============================")
+        stage = "article_generation"
+        article = generate_article(title, content, facts)
+        if not isinstance(article, str) or not article.strip():
+            return {"status": "failed", "stage": stage, "error": "No generated article"}
 
-    print("\n[1] Extracting facts...")
-
-    facts = extract_facts(
-        title,
-        content
-    )
-
-    if "error" in facts:
-
+        stage = "article_verification"
+        verification = verify_article(content, facts, article)
+        approved = isinstance(verification, dict) and verification.get("approved") is True
         return {
-            "status": "failed",
-            "stage": "fact_extraction",
-            "error": facts
+            "status": "approved" if approved else "needs_review",
+            "original_title": title,
+            "original_content": content,
+            "facts": facts,
+            "generated_article": article,
+            "verification": verification,
         }
-
-    print("[OK] Facts extracted")
-
-
-    print("\n[2] Generating article...")
-
-    article = generate_article(
-        title,
-        content,
-        facts
-    )
-
-    print("[OK] Article generated")
-
-
-    print("\n[3] Verifying article...")
-
-    verification = verify_article(
-        content,
-        facts,
-        article
-    )
-
-    print("[OK] Verification complete")
-
-
-    if verification.get("approved"):
-
-        status = "approved"
-
-    else:
-
-        status = "needs_review"
-
-
-    return {
-        "status": status,
-        "original_title": title,
-        "original_content": content,
-        "facts": facts,
-        "generated_article": article,
-        "verification": verification
-    }
+    except RequestException as error:
+        return {"status": "failed", "stage": stage, "error": str(error)}

@@ -52,3 +52,36 @@ class TransportTests(SimpleTestCase):
                     result = run_pipeline(source, output)
                 self.assertEqual(result["status"].tolist(), [status, "APPROVED"])
                 self.assertEqual(pd.read_csv(output)["status"].tolist(), [status, "APPROVED"])
+
+
+class StructuredOutputTests(SimpleTestCase):
+    def test_fact_objects_and_fenced_json(self):
+        from ai.fact_extractor import extract_facts
+
+        for text in ("null", "[]", '"facts"', "{}", "broken"):
+            with self.subTest(text=text), patch("ai.fact_extractor.generate_text", return_value=text):
+                self.assertIn("error", extract_facts("Title", "Source"))
+        with patch("ai.fact_extractor.generate_text", return_value='```json\n{"what":"Event"}\n```'):
+            self.assertEqual(extract_facts("Title", "Source"), {"what": "Event"})
+
+    def test_approval_requires_boolean_without_contradictory_errors(self):
+        from ai.fact_verifier import verify_article
+
+        for payload in (None, [], {}, {"approved": "false"}, {"approved": "true"},
+                        {"approved": 1}, {"approved": True, "errors": ["Incorrect date"]},
+                        {"approved": True, "invented_facts": ["Unsupported claim"]}):
+            with self.subTest(payload=payload), patch("ai.fact_verifier.generate_text", return_value=json.dumps(payload)):
+                self.assertIs(verify_article("Source", {}, "Draft")["approved"], False)
+        with patch("ai.fact_verifier.generate_text", return_value='```json\n{"approved":true}\n```'):
+            self.assertIs(verify_article("Source", {}, "Draft")["approved"], True)
+
+    def test_manual_pipeline_handles_rejection_and_transport_errors(self):
+        from pipeline.news_pipeline import process_news
+
+        good = [response({"response": '{"what":"Event"}'}), response({"response": "A draft"})]
+        with patch("ai.llm.requests.post", side_effect=good + [response({"response": '{"approved":"false"}'})]):
+            self.assertEqual(process_news("Title", "Source")["status"], "needs_review")
+        with patch("ai.llm.requests.post", return_value=response({})):
+            result = process_news("Title", "Source")
+        self.assertEqual(result["status"], "failed")
+        self.assertEqual(result["stage"], "fact_extraction")

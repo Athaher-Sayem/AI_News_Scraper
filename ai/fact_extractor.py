@@ -60,8 +60,10 @@ ORIGINAL CONTENT:
 
     try:
         facts = json.loads(response)
+        if not isinstance(facts, dict) or not facts:
+            raise ValueError("Expected a nonempty JSON object")
 
-    except json.JSONDecodeError:
+    except ValueError:
 
         return {
             "error": "Could not parse AI response",

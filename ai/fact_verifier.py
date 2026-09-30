@@ -77,8 +77,10 @@ GENERATED ARTICLE:
 
     try:
         result = json.loads(response)
+        if not isinstance(result, dict) or not isinstance(result.get("approved"), bool):
+            raise ValueError("Expected a JSON object with a boolean approval")
 
-    except json.JSONDecodeError:
+    except ValueError:
 
         return {
             "approved": False,
@@ -89,4 +91,8 @@ GENERATED ARTICLE:
             "raw_response": response
         }
 
+    # An explicit error or invented fact contradicts an approval, even when
+    # the service also emits approved=true.
+    if result.get("errors") or result.get("invented_facts"):
+        result["approved"] = False
     return result
