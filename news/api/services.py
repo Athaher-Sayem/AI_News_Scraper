@@ -79,12 +79,13 @@ def _generation_status():
     try:
         response = requests.get(tags_url, timeout=2)
         response.raise_for_status()
-        names = [model.get("name", "") for model in response.json().get("models", [])]
-        base_name = MODEL_NAME.split(":")[0]
+        payload = response.json()
+        if not isinstance(payload, dict) or not isinstance(payload.get("models"), list):
+            return status
+        names = [model.get("name") for model in payload["models"] if isinstance(model, dict)]
+        configured_name = MODEL_NAME if ":" in MODEL_NAME else MODEL_NAME + ":latest"
         status["available"] = True
-        status["model_installed"] = any(
-            name == MODEL_NAME or name.split(":")[0] == base_name for name in names
-        )
+        status["model_installed"] = configured_name in names
     except (requests.RequestException, ValueError):
         pass
     return status
@@ -93,7 +94,8 @@ def _generation_status():
 def health():
     database_ok = True
     try:
-        connection.ensure_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
     except Exception:
         database_ok = False
     data = {

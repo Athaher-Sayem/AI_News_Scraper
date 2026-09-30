@@ -26,7 +26,7 @@ version, as requested by the roadmap; they are not implied by an empty module.
   credentials, the database, or raw input; preserve valid CSV/CLI usage.
 - [x] R03: Verify processed-result filtering and pagination return stable row
   identifiers that resolve to the same detail resource.
-- [ ] R04: Verify request validation/authentication and error envelopes: malformed
+- [x] R04: Verify request validation/authentication and error envelopes: malformed
   JSON/encoding, wrong content types, query bounds, method handling, and failures.
 - [ ] R05: Verify Swagger schemas against actual success, failure, empty, and
   nullable responses; check route coverage and browser rendering.
@@ -135,6 +135,10 @@ version, as requested by the roadmap; they are not implied by an empty module.
 
 ## Verification log
 
+- R04c: health executes a database query and checks the exact installed model
+  tag; a different-size model no longer reports the requested model installed.
+  Malformed model inventories and database outages tested; 28 API/review tests
+  passed. A test-double teardown issue was fixed and the suite rerun successfully.
 - R04b: out-of-range article pages return an empty page without passing enormous
   SQL offsets to SQLite. Negative/invalid bounds still reject correctly; checked
   list/detail/auth/run/review integration (26 tests passed).

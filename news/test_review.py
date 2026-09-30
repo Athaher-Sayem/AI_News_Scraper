@@ -86,3 +86,30 @@ class RequestBoundaryTests(SimpleTestCase):
                                         headers={"X-API-Key": "test-key"})
             self.assertEqual(response.status_code, 202)
             self.assertEqual(submit.call_args.args[0]["limit"], 1)
+
+
+class HealthDependencyTests(SimpleTestCase):
+    def test_model_tags_are_exact_and_malformed_payloads_do_not_crash(self):
+        from news.api.services import _generation_status
+
+        with patch("ai.config.MODEL_NAME", "example:small"), patch("news.api.services.requests.get") as get:
+            for payload, available, installed in (
+                ({"models": [{"name": "example:large"}]}, True, False),
+                ({"models": [{"name": "example:small"}]}, True, True),
+                ({"models": [None, {}, {"name": None}]}, True, False),
+                ([], False, False), ({"models": None}, False, False),
+            ):
+                with self.subTest(payload=payload):
+                    get.return_value.json.return_value = payload
+                    result = _generation_status()
+                    self.assertEqual(result["available"], available)
+                    self.assertEqual(result["model_installed"], installed)
+
+    def test_database_query_failure_returns_degraded_health(self):
+        with patch("news.api.services.connection") as connection, patch(
+            "news.api.services._generation_status", return_value={"available": False}
+        ):
+            connection.cursor.side_effect = RuntimeError("database down")
+            response = self.client.get("/api/v1/health/")
+        self.assertEqual(response.status_code, 503)
+        self.assertFalse(response.json()["data"]["database"]["available"])
