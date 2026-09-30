@@ -481,16 +481,16 @@ def build_spec():
                         "reason": {"type": "string"},
                         "generated_article": {"type": "string", "nullable": True},
                         "facts": {
-                            "nullable": True,
                             "oneOf": [
-                                {"type": "object", "additionalProperties": True},
+                                {"type": "object", "nullable": True, "additionalProperties": True},
+                                {"type": "array", "items": {}},
                                 {"type": "string"},
                             ],
                         },
                         "verification": {
-                            "nullable": True,
                             "oneOf": [
-                                {"type": "object", "additionalProperties": True},
+                                {"type": "object", "nullable": True, "additionalProperties": True},
+                                {"type": "array", "items": {}},
                                 {"type": "string"},
                             ],
                         },
@@ -603,6 +603,18 @@ def build_spec():
                     },
                     "required": ["processed", "approved", "rejected", "failed", "by_status"],
                 },
+                "RunParameters": {
+                    "type": "object",
+                    "description": "Normalized run parameters; null limit means all rows.",
+                    "properties": {
+                        "input": {"type": "string"},
+                        "output": {"type": "string"},
+                        "limit": {"type": "integer", "minimum": 1, "nullable": True},
+                        "scrape": {"type": "boolean"},
+                        "deduplicate": {"type": "boolean"},
+                    },
+                    "required": ["input", "output", "limit", "scrape", "deduplicate"],
+                },
                 "Run": {
                     "type": "object",
                     "properties": {
@@ -611,8 +623,8 @@ def build_spec():
                             "type": "string",
                             "enum": ["queued", "running", "succeeded", "failed"],
                         },
-                        "request": _ref("RunRequest"),
-                        "summary": {"nullable": True, "allOf": [_ref("RunSummary")]},
+                        "request": _ref("RunParameters"),
+                        "summary": {"oneOf": [_ref("RunSummary"), {"type": "object", "nullable": True, "enum": [None]}]},
                         "error": {"type": "string", "nullable": True},
                         "created_at": {"type": "string", "format": "date-time"},
                         "started_at": {"type": "string", "format": "date-time", "nullable": True},

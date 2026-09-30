@@ -2,6 +2,8 @@ import re
 
 from django.test import Client, TestCase, override_settings
 from django.urls import get_resolver
+from openapi_schema_validator import OAS30Validator
+from openapi_spec_validator import validate_spec
 
 from news.api.openapi import build_spec
 from news.api.services import MAX_PAGE_SIZE, STATUSES
@@ -164,6 +166,31 @@ class OpenApiSpecTests(TestCase):
             spec["components"]["parameters"]["PageSize"]["schema"]["maximum"],
             MAX_PAGE_SIZE,
         )
+
+    def test_document_passes_openapi_standard_validation(self):
+        validate_spec(build_spec())
+
+    def test_serialized_run_and_processed_results_match_documented_schemas(self):
+        from news.api.jobs import PipelineJob
+        from news.api.serializers import serialize_processed
+
+        spec = build_spec()
+        def validate(name, value):
+            OAS30Validator({"$ref": f"#/components/schemas/{name}",
+                            "components": spec["components"]}).validate(value)
+
+        job = PipelineJob({"limit": None})
+        validate("Run", job.to_dict())
+        job.status = "failed"
+        job.error = "Service unavailable"
+        job.summary = {"processed": 1, "approved": 0, "rejected": 0, "failed": 1,
+                       "by_status": {"FACT_EXTRACTION_FAILED": 1}}
+        validate("Run", job.to_dict())
+        for value in ("", "{}", "[]", '{"error": "Invalid response"}', "raw invalid output"):
+            with self.subTest(value=value):
+                row = serialize_processed({"status": "ARTICLE_REJECTED", "facts": value,
+                                           "verification": value}, 0)
+                validate("ProcessedRow", row)
 
 
 def _ref_target(ref):

@@ -28,7 +28,7 @@ version, as requested by the roadmap; they are not implied by an empty module.
   identifiers that resolve to the same detail resource.
 - [x] R04: Verify request validation/authentication and error envelopes: malformed
   JSON/encoding, wrong content types, query bounds, method handling, and failures.
-- [ ] R05: Verify Swagger schemas against actual success, failure, empty, and
+- [x] R05: Verify Swagger schemas against actual success, failure, empty, and
   nullable responses; check route coverage and browser rendering.
 - [ ] R06: Verify job lifecycle, failure summaries, concurrent submissions,
   thread startup errors, shutdown behavior, and documented persistence limits.
@@ -135,6 +135,12 @@ version, as requested by the roadmap; they are not implied by an empty module.
 
 ## Verification log
 
+- R05: corrected nullable results/arrays and separated normalized run parameters
+  (`limit: null`) from request input (`limit: "all"`). Added a standards validator
+  to development requirements and validated real serialized queued/failed runs
+  and processed results. All 38 relevant tests passed. Live Chromium rendered
+  all 9 operations and the POST request schema; fixed a browser-check timing race
+  before accepting the result.
 - R04c: health executes a database query and checks the exact installed model
   tag; a different-size model no longer reports the requested model installed.
   Malformed model inventories and database outages tested; 28 API/review tests

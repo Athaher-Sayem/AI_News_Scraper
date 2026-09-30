@@ -58,6 +58,7 @@ guarantee. Review generated articles and their verification results before use.
 ## Check and test
 
 ```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
 .\.venv\Scripts\python.exe manage.py check
 .\.venv\Scripts\python.exe manage.py test
 ```
