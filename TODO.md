@@ -36,7 +36,7 @@ version, as requested by the roadmap; they are not implied by an empty module.
   validation, strict approval, rejection, and continued processing after errors.
 - [x] R08: Verify result persistence: empty inputs, stale output, failed writes,
   source preservation, Unicode, and concurrent API reads while saving.
-- [ ] R09: Verify scraper extraction/cleaning, HTTP failures, source configuration,
+- [x] R09: Verify scraper extraction/cleaning, HTTP failures, source configuration,
   URL deduplication, and database/CSV consistency with controlled fixtures.
 - [ ] R10: Verify semantic deduplication boundaries, invalid titles, small inputs,
   identical/non-English titles, and reproducible output on the available dataset.
@@ -135,6 +135,12 @@ version, as requested by the roadmap; they are not implied by an empty module.
 
 ## Verification log
 
+- R09c: complete category/extraction failure or failed database saves now fail
+  collection explicitly instead of reporting a successful empty scrape. Successful
+  and existing-article runs remain valid. Simulated 429 and DB outage plus the
+  collection/CLI/API regression suite passed (54 tests). Configured-source live
+  availability, persistent source management, and rate-limit retries remain
+  separately unchecked roadmap work.
 - R09b: fresh raw exports now include the required header. Export reconciles
   missing database rows atomically, preserving existing raw records. A disk-full
   simulation followed by another collection repaired the CSV without refetching

@@ -78,8 +78,8 @@ CATEGORY_HTML = """<main>
 </main>"""
 
 
-def collect_fixture(path):
-    category_page, article_page = fixture_page(CATEGORY_HTML), fixture_page()
+def collect_fixture(path, category_status=200):
+    category_page, article_page = fixture_page(CATEGORY_HTML, status=category_status), fixture_page()
     with patch("scraper.scraper.sync_playwright") as playwright, contextlib.redirect_stdout(io.StringIO()):
         browser = playwright.return_value.__enter__.return_value.chromium.launch.return_value
         browser.new_page.side_effect = [category_page, article_page]
@@ -90,6 +90,18 @@ def collect_fixture(path):
 
 
 class CollectorTests(TestCase):
+    def test_complete_source_or_database_failure_is_reported_to_the_flow(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "news.csv"
+            with self.assertRaisesMessage(ValueError, "all requested categories failed"):
+                collect_fixture(output, category_status=429)
+            self.assertEqual(News.objects.count(), 0)
+            with patch("scraper.scraper.save_news", side_effect=OSError("database unavailable")):
+                with self.assertRaisesMessage(ValueError, "failed database storage"):
+                    collect_fixture(output)
+            with output.open(encoding="utf-8", newline="") as handle:
+                self.assertEqual(list(csv.DictReader(handle)), [])
+
     def test_category_fragments_external_links_and_reruns_do_not_duplicate_articles(self):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "news.csv"

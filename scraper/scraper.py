@@ -352,6 +352,9 @@ def news_collect(
     total_found = 0
     total_new = 0
     total_existing = 0
+    category_successes = 0
+    category_failures = 0
+    article_failures = 0
 
     # ========================================================
     # OPEN PLAYWRIGHT
@@ -406,9 +409,10 @@ def news_collect(
                     "main, #main-content, body",
                     timeout=15000,
                 )
+                category_successes += 1
 
             except Exception as e:
-
+                category_failures += 1
                 print(
                     f"Category error: {e}"
                 )
@@ -568,7 +572,7 @@ def news_collect(
                 )
 
                 if not data:
-
+                    article_failures += 1
                     print(
                         "Article scraping failed."
                     )
@@ -771,4 +775,10 @@ def news_collect(
 
     print("==================================")
 
+    if database_failed:
+        raise ValueError(f"{site_name}: {database_failed} article(s) failed database storage")
+    if category_failures and not category_successes:
+        raise ValueError(f"{site_name}: all requested categories failed")
+    if article_failures and not total_new and not total_existing:
+        raise ValueError(f"{site_name}: all discovered articles failed extraction")
     return database_new
