@@ -9,7 +9,7 @@ import tempfile
 from unittest.mock import patch
 
 import pandas as pd
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, override_settings
 
 from pipeline import flow
 
@@ -48,3 +48,41 @@ class PathBoundaryTests(SimpleTestCase):
                     flow.run_flow(source, data / "alias.csv", scrape=True)
                 scrape.assert_not_called()
                 self.assertEqual(raw.read_text(encoding="utf-8"), "title\noriginal\n")
+
+
+class RequestBoundaryTests(SimpleTestCase):
+    def test_malformed_requests_never_submit_work(self):
+        cases = [(b'{"limit": "\xff"}', "application/json", 400, "invalid_json"),
+                 (b"[]", "application/json", 400, "invalid_json"),
+                 (b"{}", "application/jsonp", 415, "unsupported_media_type")]
+        with patch("news.api.jobs.submit") as submit:
+            for body, content_type, status, code in cases:
+                with self.subTest(body=body, content_type=content_type):
+                    response = self.client.post("/api/v1/pipeline/runs/", body, content_type=content_type)
+                    self.assertEqual(response.status_code, status)
+                    self.assertEqual(response.json()["error"]["code"], code)
+            submit.assert_not_called()
+
+    @override_settings(NEWS_API_KEY="test-key")
+    def test_unicode_invalid_api_key_returns_401(self):
+        response = self.client.get("/api/v1/pipeline/runs/", headers={"X-API-Key": "clé"})
+        self.assertEqual(response.status_code, 401)
+
+    def test_internal_type_errors_are_not_misreported_as_client_errors(self):
+        with patch("news.api.services.list_articles", side_effect=TypeError("private internal detail")):
+            with self.assertLogs("news.api.http", level="ERROR"):
+                response = self.client.get("/api/v1/articles/")
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.json()["error"]["code"], "internal_error")
+        self.assertNotIn("private", response.content.decode())
+
+    def test_valid_json_charset_and_key_reach_the_handler(self):
+        from news.api.jobs import PipelineJob
+
+        with override_settings(NEWS_API_KEY="test-key"), patch("news.api.jobs.submit") as submit:
+            submit.return_value = PipelineJob({"limit": 1})
+            response = self.client.post("/api/v1/pipeline/runs/", b'{"limit": 1}',
+                                        content_type="application/json; charset=utf-8",
+                                        headers={"X-API-Key": "test-key"})
+            self.assertEqual(response.status_code, 202)
+            self.assertEqual(submit.call_args.args[0]["limit"], 1)

@@ -135,6 +135,11 @@ version, as requested by the roadmap; they are not implied by an empty module.
 
 ## Verification log
 
+- R04a: malformed encodings now return `invalid_json`; misleading content types
+  are rejected; non-ASCII invalid API keys return 401 rather than crashing.
+  Internal type/serialization errors are server errors, not client validation
+  errors. Valid JSON charset/auth → job submission and related flows passed
+  (46 tests). Query bounds and health dependency checks remain under review.
 - R03: fixed filtered CSV results being renumbered (a listed row could open an
   unrelated detail). Source row indexes now survive every filter and page.
   Status/source/search/combined filters, second-page detail equality, empty pages,

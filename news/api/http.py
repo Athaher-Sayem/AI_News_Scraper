@@ -31,7 +31,7 @@ def _authorized(request):
     if not expected:
         return True
     provided = request.headers.get("X-API-Key", "")
-    return bool(provided) and secrets.compare_digest(provided, expected)
+    return bool(provided) and secrets.compare_digest(provided.encode("utf-8"), expected.encode("utf-8"))
 
 
 def _parse_body(request):
@@ -40,11 +40,12 @@ def _parse_body(request):
     raw = request.body
     if not raw.strip():
         return {}
-    content_type = request.META.get("CONTENT_TYPE", "")
-    if not content_type.startswith("application/json"):
+    if request.content_type.lower() != "application/json":
         raise ApiError("unsupported_media_type", "Request body must be application/json", 415)
     try:
         parsed = json.loads(raw)
+    except UnicodeDecodeError:
+        raise ApiError("invalid_json", "Request body has invalid JSON encoding", 400) from None
     except json.JSONDecodeError as error:
         raise ApiError(
             "invalid_json",
@@ -82,24 +83,21 @@ def api_view(methods, public=False):
             try:
                 body = _parse_body(request)
                 result = view(request, body, *args, **kwargs)
+                if isinstance(result, tuple):
+                    data = result[0]
+                    status = result[1] if len(result) > 1 else 200
+                    headers = result[2] if len(result) > 2 else {}
+                else:
+                    data, status, headers = result, 200, {}
+                response = JsonResponse({"data": data}, status=status)
+                for name, value in headers.items():
+                    response[name] = value
+                return response
             except ApiError as error:
                 return error_response(error.code, error.message, error.status, error.details)
-            except (ValueError, TypeError) as error:
-                return error_response("invalid_request", str(error), 400)
             except Exception:
                 logger.exception("Unhandled API error on %s", request.path)
                 return error_response("internal_error", "An unexpected error occurred", 500)
-
-            if isinstance(result, tuple):
-                data = result[0]
-                status = result[1] if len(result) > 1 else 200
-                headers = result[2] if len(result) > 2 else {}
-            else:
-                data, status, headers = result, 200, {}
-            response = JsonResponse({"data": data}, status=status)
-            for name, value in headers.items():
-                response[name] = value
-            return response
 
         return wrapper
 
