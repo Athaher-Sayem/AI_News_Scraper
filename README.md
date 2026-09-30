@@ -148,3 +148,13 @@ run may be active at a time (otherwise `409 job_conflict`). Input/output paths
 must be CSV files beneath `data/` and can never overwrite the raw scrape
 CSV. Poll `pipeline/runs/{id}/` for `summary` (`processed`, `approved`,
 `rejected`, `failed`, `by_status`) or `error`.
+
+Runs with any failed processing stage report `failed`; editorial rejections are
+completed decisions. Summary counts for approved, rejected, and failed rows are
+disjoint. Worker startup failures return `503 worker_unavailable` and free the slot.
+
+The current runner is a **single-process development runner**: only the newest
+20 jobs are kept in memory; restarting the server loses job history and interrupts
+active daemon threads. Its lock does not coordinate multiple web workers or CLI
+runs. CSV results survive restarts. Durable queueing and restart recovery are
+tracked separately in TODO.md (Celery/Redis milestone).

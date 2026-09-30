@@ -327,15 +327,17 @@ class RunLifecycleTests(ApiTestCase):
 
         job = jobs.submit({"input_csv": flow.UNIQUE_CSV_PATH, "limit": 3}, runner=runner)
         self.assertTrue(job.done.wait(10), "run did not finish")
-        self.assertEqual(job.status, "succeeded")
+        self.assertEqual(job.status, "failed")
         self.assertEqual(job.summary["processed"], 3)
         self.assertEqual(job.summary["approved"], 1)
         self.assertEqual(job.summary["failed"], 1)
+        self.assertEqual(job.summary["rejected"], 1)
+        self.assertEqual(sum(job.summary[key] for key in ("approved", "rejected", "failed")), 3)
 
         response = self.client.get(f"/api/v1/pipeline/runs/{job.id}/")
         self.assertEqual(response.status_code, 200)
         data = self.data(response)
-        self.assertEqual(data["status"], "succeeded")
+        self.assertEqual(data["status"], "failed")
         self.assertEqual(data["summary"]["approved"], 1)
         self.assertEqual(data["request"]["limit"], 3)
 
@@ -378,3 +380,26 @@ class RunLifecycleTests(ApiTestCase):
         response = self.client.get("/api/v1/pipeline/runs/does-not-exist/")
         self.assertEqual(response.status_code, 404)
         self.assertEqual(self.error(response)["code"], "not_found")
+
+    def test_worker_start_failure_returns_503_and_releases_slot(self):
+        with patch("news.api.jobs.threading.Thread.start", side_effect=RuntimeError("cannot start")):
+            with self.assertLogs("news.api.jobs", level="ERROR"):
+                response = self.client.post("/api/v1/pipeline/runs/", "{}", content_type="application/json")
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(self.error(response)["code"], "worker_unavailable")
+        self.assertEqual(jobs.recent()[0].status, "failed")
+        job = jobs.submit({"limit": 1}, runner=lambda **kwargs: pd.DataFrame({"status": ["APPROVED"]}))
+        self.assertTrue(job.done.wait(10))
+        self.assertEqual(job.status, "succeeded")
+
+    def test_invalid_runner_result_is_not_reported_as_success(self):
+        with self.assertLogs("news.api.jobs", level="ERROR"):
+            job = jobs.submit({}, runner=lambda **kwargs: None)
+            self.assertTrue(job.done.wait(10))
+        self.assertEqual(job.status, "failed")
+
+    def test_empty_input_is_a_successful_zero_count_run(self):
+        job = jobs.submit({}, runner=lambda **kwargs: pd.DataFrame(columns=["status"]))
+        self.assertTrue(job.done.wait(10))
+        self.assertEqual(job.status, "succeeded")
+        self.assertEqual(job.summary["processed"], 0)

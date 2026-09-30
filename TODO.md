@@ -30,7 +30,7 @@ version, as requested by the roadmap; they are not implied by an empty module.
   JSON/encoding, wrong content types, query bounds, method handling, and failures.
 - [x] R05: Verify Swagger schemas against actual success, failure, empty, and
   nullable responses; check route coverage and browser rendering.
-- [ ] R06: Verify job lifecycle, failure summaries, concurrent submissions,
+- [x] R06: Verify job lifecycle, failure summaries, concurrent submissions,
   thread startup errors, shutdown behavior, and documented persistence limits.
 - [ ] R07: Verify AI transport/JSON parsing, missing/malformed responses, content
   validation, strict approval, rejection, and continued processing after errors.
@@ -135,6 +135,12 @@ version, as requested by the roadmap; they are not implied by an empty module.
 
 ## Verification log
 
+- R06: failed rows now make a run fail, with disjoint approved/rejected/failed
+  counts. Invalid runner output fails explicitly; worker startup failure returns
+  503 and frees the slot; terminal snapshots update under the lock. Verified
+  mixed results, empty inputs, failure recovery, concurrent-run rejection, and
+  related pipeline/API/Swagger contracts (62 tests passed). Documented the real
+  single-process/in-memory limits; durable workers remain roadmap item 15.
 - R05: corrected nullable results/arrays and separated normalized run parameters
   (`limit: null`) from request input (`limit: "all"`). Added a standards validator
   to development requirements and validated real serialized queued/failed runs

@@ -21,7 +21,7 @@ _jobs = OrderedDict()
 class PipelineJob:
     def __init__(self, request):
         self.id = uuid.uuid4().hex
-        self.request = request
+        self.request = dict(request)
         self.status = "queued"
         self.error = None
         self.summary = None
@@ -31,7 +31,8 @@ class PipelineJob:
         self.done = threading.Event()
 
     def to_dict(self):
-        return serialize_job(self)
+        with _lock:
+            return serialize_job(self)
 
 
 def reset():
@@ -67,25 +68,34 @@ def submit(request, runner=None):
                 break
             del _jobs[oldest_id]
 
-    thread = threading.Thread(
-        target=_execute,
-        args=(job, runner or flow.run_flow),
-        daemon=True,
-        name=f"pipeline-run-{job.id[:8]}",
-    )
-    job.thread = thread
-    thread.start()
+    try:
+        thread = threading.Thread(
+            target=_execute,
+            args=(job, runner or flow.run_flow),
+            daemon=True,
+            name=f"pipeline-run-{job.id[:8]}",
+        )
+        job.thread = thread
+        thread.start()
+    except RuntimeError:
+        with _lock:
+            job.status = "failed"
+            job.error = "Could not start the pipeline worker"
+            job.finished_at = timezone.now()
+        job.done.set()
+        logger.exception("Could not start pipeline run %s", job.id)
+        raise ApiError("worker_unavailable", job.error, 503) from None
     return job
 
 
 def _summarize(result):
     if result is None or not hasattr(result, "columns") or "status" not in result.columns:
-        return {"processed": 0, "approved": 0, "rejected": 0, "failed": 0, "by_status": {}}
+        raise ValueError("Pipeline did not return a result with statuses")
     statuses = result["status"].astype(str)
     return {
         "processed": int(len(result)),
         "approved": int((statuses == "APPROVED").sum()),
-        "rejected": int((statuses != "APPROVED").sum()),
+        "rejected": int(statuses.str.endswith("_REJECTED").sum()),
         "failed": int(statuses.str.endswith("_FAILED").sum()),
         "by_status": {str(key): int(value) for key, value in statuses.value_counts().items()},
     }
@@ -94,18 +104,26 @@ def _summarize(result):
 def _execute(job, runner):
     from django.db import close_old_connections
 
-    close_old_connections()
-    job.status = "running"
-    job.started_at = timezone.now()
+    with _lock:
+        job.status = "running"
+        job.started_at = timezone.now()
+    status, error, summary = "failed", None, None
     try:
-        result = runner(**job.request)
-        job.summary = _summarize(result)
-        job.status = "succeeded"
-    except Exception as error:
-        logger.exception("Pipeline run %s failed", job.id)
-        job.status = "failed"
-        job.error = str(error) or error.__class__.__name__
-    finally:
-        job.finished_at = timezone.now()
         close_old_connections()
-        job.done.set()
+        result = runner(**job.request)
+        summary = _summarize(result)
+        status = "failed" if summary["failed"] else "succeeded"
+        if summary["failed"]:
+            error = f"{summary['failed']} article(s) failed processing; see saved results"
+    except Exception as exception:
+        logger.exception("Pipeline run %s failed", job.id)
+        error = str(exception) or exception.__class__.__name__
+    finally:
+        try:
+            close_old_connections()
+        finally:
+            with _lock:
+                job.summary, job.error = summary, error
+                job.finished_at = timezone.now()
+                job.status = status
+            job.done.set()

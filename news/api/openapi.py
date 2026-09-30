@@ -89,6 +89,7 @@ def _error_for(status):
         409: ("job_conflict", "A pipeline run is already in progress"),
         415: ("unsupported_media_type", "Body must be `application/json`"),
         500: ("internal_error", "Unexpected server error"),
+        503: ("worker_unavailable", "The pipeline worker could not be started"),
     }
     code, description = messages[status]
     return _error(f"{description} (`{code}`)")
@@ -288,6 +289,7 @@ def build_spec():
                         "409": _error_for(409),
                         "415": _error_for(415),
                         "500": _error_for(500),
+                        "503": _error_for(503),
                     },
                 },
             },
