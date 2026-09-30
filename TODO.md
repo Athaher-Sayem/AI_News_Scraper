@@ -1,0 +1,145 @@
+# Review and delivery checklist
+
+This checklist follows the supplied **AI-Powered Automated Newspaper Platform**
+roadmap. An unchecked box is unfinished work, not an implemented feature.
+The active review stabilizes the current aggregator, CLI, HTTP API, and Swagger
+documentation. Later milestones are deliberately sequenced after the first
+version, as requested by the roadmap; they are not implied by an empty module.
+
+## Completion rule for every change
+
+1. Read the implementation and its callers; reproduce the issue when possible.
+2. Make one focused change, preserving unrelated behavior and user data.
+3. Test the change, failure cases, related features, and the affected workflow.
+4. Record actual results below. Never mark an unavailable live service as tested.
+5. Run `git status`, `git add .`, `git commit -m "clear descriptive commit message"`,
+   and `git push`. Inspect the diff/log before committing and verify the remote
+   tip afterward. The installed post-commit hook also pushes to the current
+   branch and fast-forwards `main`; verify both rather than assuming success.
+6. Only then start the next item. If blocked, record the blocker explicitly.
+
+## Active review (execute in order)
+
+- [x] R01: Inventory Git changes, repository guidance, dependencies, migrations,
+  existing tests, running services, and default workflow. Commit this checklist.
+- [ ] R02: Validate pipeline paths before work begins: reject overwriting code,
+  credentials, the database, or raw input; preserve valid CSV/CLI usage.
+- [ ] R03: Verify processed-result filtering and pagination return stable row
+  identifiers that resolve to the same detail resource.
+- [ ] R04: Verify request validation/authentication and error envelopes: malformed
+  JSON/encoding, wrong content types, query bounds, method handling, and failures.
+- [ ] R05: Verify Swagger schemas against actual success, failure, empty, and
+  nullable responses; check route coverage and browser rendering.
+- [ ] R06: Verify job lifecycle, failure summaries, concurrent submissions,
+  thread startup errors, shutdown behavior, and documented persistence limits.
+- [ ] R07: Verify AI transport/JSON parsing, missing/malformed responses, content
+  validation, strict approval, rejection, and continued processing after errors.
+- [ ] R08: Verify result persistence: empty inputs, stale output, failed writes,
+  source preservation, Unicode, and concurrent API reads while saving.
+- [ ] R09: Verify scraper extraction/cleaning, HTTP failures, source configuration,
+  URL deduplication, and database/CSV consistency with controlled fixtures.
+- [ ] R10: Verify semantic deduplication boundaries, invalid titles, small inputs,
+  identical/non-English titles, and reproducible output on the available dataset.
+- [ ] R11: Review first-version foundation gaps; deliver the smallest coherent
+  increment with integration tests rather than implement all roadmap stages.
+- [ ] R12: Review settings/secrets, dependencies, operator documentation, Git
+  workflow claims, and repeatable local/CI checks; fix confirmed issues separately.
+- [ ] R13: Final diff/repository review, full tests, Django/migration/dependency
+  checks, complete fixture-based scrape-to-result workflow, available live-service
+  smoke tests, localhost checks, and remote/working-tree verification.
+
+## Full roadmap coverage and acceptance criteria
+
+### Foundation and first version
+
+- [ ] 01 Architecture: document boundaries, state transitions, ownership of raw
+  versus generated data, failure/retry behavior, and CLI/API parity.
+- [ ] 02 Backend foundation: assess current Django app structure; add new apps
+  only when required; validate authentication, API pagination, and filtering.
+- [ ] 03 Database: design/migrate Source, SourceArticle, ArticleCluster,
+  NewsArticle, Category, Topic, Entity, Fact, AIAnalysis, SensitivityAnalysis,
+  Translation, Media, Review, Publication, ScrapingJob, AIJob, ErrorLog; verify
+  constraints, indexes, transactions, migrations, and rollback/data preservation.
+- [ ] 04 Scraping: verify 3–5 configured sites, rate limits, bounded retries,
+  timeouts, 403/429/layout changes, missing fields/images, duplicate URLs, and
+  source/date/author attribution. Live sites and fixtures are separate checks.
+- [ ] 05 Sources: persisted enabled flag, parser version, method, RSS/base URL,
+  rate limit, last attempt/success, and errors; verify enable/disable behavior.
+- [ ] 06 Cleaning: remove boilerplate and normalize whitespace, Unicode,
+  Bangla, quotes, dates, and numbers without altering source facts.
+- [ ] 07 Deduplication: exact/normalized URL/title checks plus semantic clusters;
+  retain every cluster member and its attribution; validate threshold behavior.
+- [ ] 08 Categorization: structured category/subcategory/confidence with
+  validated outputs, failure handling, persistence, admin filters, and tests.
+- [ ] First-version integration gate: sources → clean articles → deduplication →
+  categories → PostgreSQL → Django admin → simple newspaper homepage. Verify
+  PostgreSQL on an actual configured server before claiming that backend works.
+
+### AI news engine (after the foundation gate)
+
+- [ ] 09 Sensitivity: structured flags/risk/score and mandatory review routing;
+  test sensitive, normal, uncertain, and failed analysis paths.
+- [ ] 10 Facts: structured entities, dates, numbers, quotes, claims, evidence;
+  validate schemas and preserve original source references.
+- [ ] 11 Conflicts: compare facts across cluster members, retain disagreements,
+  and route unresolved conflicts to review rather than inventing a resolution.
+- [ ] 12 Generation: structured headline/subheadline/lead/body/facts/tags/SEO,
+  attributed evidence, factual consistency, and validated output/length policy.
+- [ ] 13 Bilingual: English and Bangla from shared facts, language detection,
+  field validation, persistence, and factual-equivalence checks in both languages.
+- [ ] 14 Images: provider abstraction, image prompt/metadata, storage, selected
+  source images versus labeled generated illustrations, retries/failures.
+
+### Editorial automation
+
+- [ ] 15 Workers: durable Celery/Redis queue, persisted jobs, restart recovery,
+  retry limits, priorities, idempotency, concurrency tests, and worker smoke test.
+- [ ] 16 Scheduling: periodic scrape/process tasks and scheduled publication;
+  verify timezone behavior, overdue jobs, retries, and no duplicate publications.
+- [ ] 17 Dashboard: review queues, conflicts, drafts, media, failures, approved,
+  scheduled/published content; test every authorized editor action and audit trail.
+- [ ] 18 Search: indexed PostgreSQL search with the roadmap's filters and tests;
+  consider external search only after measuring the baseline.
+- [ ] 19 Vectors: embeddings/model versioning, pgvector indexes, related stories,
+  migration/reindex behavior, and semantic-search quality/performance evaluation.
+- [ ] 20 Recommendations: tested related-story similarity first; personalization
+  only with explicit user preferences and measured relevance.
+- [ ] 21 Publication: enforced SCRAPED/ANALYZING/DRAFT/REVIEW/APPROVED/SCHEDULED/
+  PUBLISHED/REJECTED/FAILED transitions, revisions, publish/unpublish, and timing.
+- [ ] 22 Roles: admin/editor/reviewer/author/reader permissions with both allowed
+  and denied action tests; validate session/token behavior and CSRF requirements.
+- [ ] 23 API expansion: sources/categories/search/related/trending/auth/reviews/
+  publication endpoints, documented contracts, permissions, throttling, tests.
+- [ ] 24 Website: home/category/detail/search/Bangla/English/latest/trending/
+  related/about/contact; browser tests, pagination, escaping, and responsive UI.
+- [ ] 25 Analytics: views/visitors/search/reading time/traffic and operational
+  success rates; test deduplication, aggregation, and permissions.
+
+### Production readiness
+
+- [ ] 26 Observability: structured logs with job/source/stage identifiers, error
+  retention, metrics, and tested notifications without leaking credentials.
+- [ ] 27 Security: externalized credentials, appropriate auth/CSRF/XSS controls,
+  validated file access/uploads, rate limits, and deployment settings checks.
+- [ ] 28 Attribution/editorial: preserve source URL/name/date and evidence,
+  distinguish drafts from publishable content, enforce sensitive review routing.
+- [ ] 29 Deployment: Docker/Compose, PostgreSQL/Redis/workers, Nginx/Gunicorn,
+  HTTPS/configuration, migrations, health checks, backup/restore, deployment test.
+- [ ] 30 CI/CD: automated tests/checks on each push, reproducible environments,
+  container build and deployment checks once deployment targets exist.
+- [ ] 31 Testing: maintain unit/integration/API/auth/browser/end-to-end coverage
+  for implemented stages; label mocks, fixtures, live tests, and untested services.
+- [ ] 32 Advanced features: entity linking, topics, misinformation-risk signals,
+  personalized recommendations, trends, breaking-news and headline optimization
+  only after core correctness and performance are verified.
+
+## Verification log
+
+- R01 baseline: clean `Demo-v1`; both remote branches started at `37442a3`.
+  No AGENTS.md files found. `manage.py test` passed all 47 tests;
+  `manage.py check`, `makemigrations --check --dry-run`, and `pip check` passed.
+  PostgreSQL is listening on 5432, but credentials/database integration have not
+  been verified. No listener was found on 8000, 11434, or 6379 at baseline.
+  The installed hook auto-pushes commits; explicit pushes and remote-tip checks
+  are still required for this review. Checklist reviewed against all 32 supplied
+  roadmap stages and the first-version integration gate.
