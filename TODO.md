@@ -22,7 +22,7 @@ version, as requested by the roadmap; they are not implied by an empty module.
 
 - [x] R01: Inventory Git changes, repository guidance, dependencies, migrations,
   existing tests, running services, and default workflow. Commit this checklist.
-- [ ] R02: Validate pipeline paths before work begins: reject overwriting code,
+- [x] R02: Validate pipeline paths before work begins: reject overwriting code,
   credentials, the database, or raw input; preserve valid CSV/CLI usage.
 - [ ] R03: Verify processed-result filtering and pagination return stable row
   identifiers that resolve to the same detail resource.
@@ -135,6 +135,11 @@ version, as requested by the roadmap; they are not implied by an empty module.
 
 ## Verification log
 
+- R02: restricted flow/API paths to resolved `.csv` files beneath `data/`;
+  rejected code/credential/database paths, directories, malformed paths and raw
+  hardlink aliases before work starts. Valid CSV → content-check → result-save
+  flow verified with temporary files. All 49 API/pipeline/Swagger/review tests
+  passed; README and Swagger path descriptions updated in the same change.
 - R01 baseline: clean `Demo-v1`; both remote branches started at `37442a3`.
   No AGENTS.md files found. `manage.py test` passed all 47 tests;
   `manage.py check`, `makemigrations --check --dry-run`, and `pip check` passed.

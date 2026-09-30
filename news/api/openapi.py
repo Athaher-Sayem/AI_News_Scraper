@@ -46,7 +46,7 @@ and `docs/`.
 returns `202` with a `Location` header. Runs move through
 `queued` → `running` → `succeeded` or `failed`. Only one run can be active at a
 time; a second attempt returns `409 job_conflict`. Paths must stay inside the
-project directory and can never overwrite the raw scrape CSV."""
+project's `data/` directory, must use `.csv`, and can never overwrite the raw scrape CSV."""
 
 
 def _ref(name):
@@ -571,11 +571,11 @@ def build_spec():
                         },
                         "input": {
                             "type": "string",
-                            "description": "Input CSV path inside the project directory",
+                            "description": "Input .csv path beneath the project's data/ directory",
                         },
                         "output": {
                             "type": "string",
-                            "description": "Output CSV path inside the project directory; must not be the raw scrape CSV",
+                            "description": "Output .csv path beneath data/; must not overwrite the raw scrape CSV",
                         },
                         "scrape": {
                             "type": "boolean",

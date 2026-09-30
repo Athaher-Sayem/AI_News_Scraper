@@ -12,16 +12,29 @@ DEDUP_THRESHOLD = 0.73
 
 
 def resolve_project_path(path, label="path"):
-    """Resolve a user supplied path and require it to stay inside the project."""
+    """Allow only CSV files beneath data/, including resolved symlink targets."""
+    if not isinstance(path, (str, Path)) or not str(path).strip():
+        raise ValueError(f"{label} must be a CSV path inside data/")
+    if any(character in str(path) for character in ("\x00", "\n", "\r")):
+        raise ValueError(f"{label} contains invalid path characters")
     resolved = Path(path)
     if not resolved.is_absolute():
         resolved = BASE_DIR / resolved
     resolved = resolved.resolve()
     try:
-        resolved.relative_to(BASE_DIR.resolve())
+        relative = resolved.relative_to((BASE_DIR / "data").resolve())
     except ValueError:
-        raise ValueError(f"{label} must be inside the project directory") from None
+        raise ValueError(f"{label} must be inside data/") from None
+    if resolved.suffix.lower() != ".csv" or resolved.is_dir() or ":" in str(relative):
+        raise ValueError(f"{label} must be a CSV file inside data/")
     return resolved
+
+
+def same_file(first, second):
+    first, second = Path(first), Path(second)
+    return first.resolve() == second.resolve() or (
+        first.exists() and second.exists() and first.samefile(second)
+    )
 
 
 def validate_limit(limit):
@@ -41,11 +54,11 @@ def validate_paths(
     """Validate the full flow before any long running work starts."""
     input_path = resolve_project_path(input_csv, "input")
     output_path = resolve_project_path(output_csv, "output")
-    if input_path == output_path:
+    if same_file(input_path, output_path):
         raise ValueError("input and output CSV paths must be different")
-    if output_path == RAW_CSV_PATH:
+    if same_file(output_path, RAW_CSV_PATH):
         raise ValueError("output must not overwrite the raw news CSV")
-    if (scrape or deduplicate) and input_path == RAW_CSV_PATH:
+    if (scrape or deduplicate) and same_file(input_path, RAW_CSV_PATH):
         raise ValueError("deduplication output must not overwrite the raw news CSV")
     return input_path, output_path
 
@@ -88,9 +101,9 @@ def deduplicate_news(
 ):
     input_path = resolve_project_path(input_csv, "input")
     output_path = resolve_project_path(output_csv, "output")
-    if input_path == output_path:
+    if same_file(input_path, output_path):
         raise ValueError("deduplication input and output must be different")
-    if output_path == RAW_CSV_PATH:
+    if same_file(output_path, RAW_CSV_PATH):
         raise ValueError("deduplication output must not overwrite the raw news CSV")
 
     module = runpy.run_path(str(BASE_DIR / "Sentence-BERT.py"))

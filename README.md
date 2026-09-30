@@ -45,7 +45,7 @@ extract facts, generate an article, verify it, and save results to
 uses the existing raw CSV. Without either flag, processing uses the existing
 unique CSV directly.
 
-Use `--input PATH` and `--output PATH` for separate input/output files. When
+Use `--input PATH` and `--output PATH` for separate CSV files beneath `data/`. When
 deduplication is requested, `--input` is its output destination. Each processing
 run replaces its output CSV with the selected rows and their statuses, facts,
 generated articles, and verification results. Request failures are recorded per
@@ -144,6 +144,6 @@ Body fields: `limit` (positive integer or `"all"`, default `1`), `input`,
 response is `202 Accepted` with a `Location` header. Runs execute in the
 background with states `queued` → `running` → `succeeded`/`failed`; only one
 run may be active at a time (otherwise `409 job_conflict`). Input/output paths
-must stay inside the project directory and can never overwrite the raw scrape
+must be CSV files beneath `data/` and can never overwrite the raw scrape
 CSV. Poll `pipeline/runs/{id}/` for `summary` (`processed`, `approved`,
 `rejected`, `failed`, `by_status`) or `error`.
