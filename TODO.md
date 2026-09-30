@@ -135,6 +135,11 @@ version, as requested by the roadmap; they are not implied by an empty module.
 
 ## Verification log
 
+- R09b: fresh raw exports now include the required header. Export reconciles
+  missing database rows atomically, preserving existing raw records. A disk-full
+  simulation followed by another collection repaired the CSV without refetching
+  the already stored article; repeat-run and archive-preservation tests passed
+  alongside related pipeline/API tests (53 total).
 - R09a: parser cleaning no longer destroys author/date metadata. HTTP error and
   contentless pages are rejected; ISO time attributes and absolute image URLs are
   retained. External/non-HTTP links are ignored and fragments do not create URL

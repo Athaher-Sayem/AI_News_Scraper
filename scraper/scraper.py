@@ -1,4 +1,3 @@
-import csv
 import os
 from datetime import datetime
 from urllib.parse import urldefrag, urljoin, urlsplit
@@ -6,7 +5,7 @@ from urllib.parse import urldefrag, urljoin, urlsplit
 from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright
 
-from .database import get_existing_urls, save_news
+from .database import export_missing_news, get_existing_urls, save_news
 
 
 # ============================================================
@@ -678,8 +677,6 @@ def news_collect(
     database_existing = 0
     database_failed = 0
 
-    successfully_saved = []
-
     for data in pending_database_records:
 
         try:
@@ -691,10 +688,6 @@ def news_collect(
             if created:
 
                 database_new += 1
-
-                successfully_saved.append(
-                    data
-                )
 
                 print(
                     f"DB SAVED: "
@@ -724,7 +717,7 @@ def news_collect(
             )
 
     # ========================================================
-    # SAVE ONLY SUCCESSFULLY SAVED ARTICLES TO CSV
+    # EXPORT DB ROWS, INCLUDING ANY MISSED BY A PREVIOUS FAILED CSV WRITE
     # ========================================================
     print("\n==================================")
     print(
@@ -732,50 +725,8 @@ def news_collect(
     )
     print("==================================")
 
-    csv_saved = 0
+    csv_saved = export_missing_news(csv_filename)
     csv_failed = 0
-
-    with open(
-        csv_filename,
-        "a",
-        newline="",
-        encoding="utf-8"
-    ) as file:
-
-        writer = csv.writer(
-            file
-        )
-
-        for data in successfully_saved:
-
-            try:
-
-                writer.writerow(
-                    [
-                        data["Source"],
-                        data["Category"],
-                        data["Title"],
-                        data["URL"],
-                        data["Content"],
-                        data["Author"],
-                        data["Published_Date"],
-                        data["Image_URL"],
-                        data["Language"],
-                        data["Scraped_Date"],
-                    ]
-                )
-
-                file.flush()
-
-                csv_saved += 1
-
-            except Exception as e:
-
-                csv_failed += 1
-
-                print(
-                    f"CSV error: {e}"
-                )
 
     # ========================================================
     # FINAL SUMMARY

@@ -93,8 +93,6 @@ class CollectorTests(TestCase):
     def test_category_fragments_external_links_and_reruns_do_not_duplicate_articles(self):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "news.csv"
-            with output.open("w", newline="", encoding="utf-8") as handle:
-                csv.writer(handle).writerow(CSV_FIELDS)
             count, article_page = collect_fixture(output)
             self.assertEqual(count, 1)
             self.assertEqual(News.objects.count(), 1)
@@ -107,3 +105,35 @@ class CollectorTests(TestCase):
                 rows = list(csv.DictReader(handle))
             self.assertEqual(len(rows), 1)
             self.assertEqual(rows[0]["url"], News.objects.get().url)
+
+    def test_export_failure_is_recoverable_without_scraping_existing_articles(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "news.csv"
+            with patch("scraper.database.write_csv_atomic", side_effect=OSError("disk full")):
+                with self.assertRaises(OSError):
+                    collect_fixture(output)
+            self.assertEqual(News.objects.count(), 1)
+            self.assertFalse(output.exists())
+            count, article_page = collect_fixture(output)
+            self.assertEqual(count, 0)
+            article_page.goto.assert_not_called()
+            with output.open(encoding="utf-8", newline="") as handle:
+                rows = list(csv.DictReader(handle))
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(set(rows[0]), set(CSV_FIELDS))
+            self.assertEqual(rows[0]["title"], News.objects.get().title)
+
+    def test_existing_csv_records_survive_database_export(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "news.csv"
+            original = dict.fromkeys(CSV_FIELDS, "")
+            original.update(url="https://archive.example/story", title="Archived source article")
+            with output.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=CSV_FIELDS)
+                writer.writeheader()
+                writer.writerow(original)
+            collect_fixture(output)
+            with output.open(encoding="utf-8", newline="") as handle:
+                rows = list(csv.DictReader(handle))
+            self.assertEqual(len(rows), 2)
+            self.assertEqual(rows[0], original)
