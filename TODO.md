@@ -135,6 +135,11 @@ version, as requested by the roadmap; they are not implied by an empty module.
 
 ## Verification log
 
+- R07a: AI transport rejects missing, non-string, empty, error, invalid-JSON, and
+  truncated responses as stage failures instead of uncaught KeyError/AttributeError.
+  Applied the existing configured output-token limit. Verified each of the three
+  stages using the real extraction/generation/verification/CSV code with HTTP
+  responses substituted; the next row still completes. 47 related tests passed.
 - R06: failed rows now make a run fail, with disjoint approved/rejected/failed
   counts. Invalid runner output fails explicitly; worker startup failure returns
   503 and frees the slot; terminal snapshots update under the lock. Verified
