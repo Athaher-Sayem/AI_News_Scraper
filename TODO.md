@@ -38,7 +38,7 @@ version, as requested by the roadmap; they are not implied by an empty module.
   source preservation, Unicode, and concurrent API reads while saving.
 - [x] R09: Verify scraper extraction/cleaning, HTTP failures, source configuration,
   URL deduplication, and database/CSV consistency with controlled fixtures.
-- [ ] R10: Verify semantic deduplication boundaries, invalid titles, small inputs,
+- [x] R10: Verify semantic deduplication boundaries, invalid titles, small inputs,
   identical/non-English titles, and reproducible output on the available dataset.
 - [ ] R11: Review first-version foundation gaps; deliver the smallest coherent
   increment with integration tests rather than implement all roadmap stages.
@@ -135,6 +135,12 @@ version, as requested by the roadmap; they are not implied by an empty module.
 
 ## Verification log
 
+- R10: dedup CSV loading preserves strings, handles numeric titles and missing
+  headers, retains Bangla Unicode letters/marks during normalization, protects
+  hardlink aliases, and uses atomic output. 41 relevant tests passed. Two real
+  embedding runs on all 1,136 rows produced the same 673 representatives and
+  groups, round-tripped through CSV, with every retained URL belonging to the
+  source dataset. Multilingual semantic model quality is not claimed by this check.
 - R09c: complete category/extraction failure or failed database saves now fail
   collection explicitly instead of reporting a successful empty scrape. Successful
   and existing-article runs remain valid. Simulated 429 and DB outage plus the

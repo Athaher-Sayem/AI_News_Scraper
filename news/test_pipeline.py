@@ -250,3 +250,24 @@ class DeduplicationTests(unittest.TestCase):
             similarity = self.module["compute_hybrid_similarity"](["Identical news headline"] * 2)
             labels = self.module["cluster_titles"](similarity)
         self.assertEqual(labels[0], labels[1])
+
+    def test_numeric_titles_missing_headers_and_bangla_normalization(self):
+        with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.StringIO()):
+            source = Path(directory) / "news.csv"
+            pd.DataFrame({"Title": [1234567890123], "source": ["NA"]}).to_csv(source, index=False)
+            frame = self.module["load_data"](source)
+            self.assertEqual(frame.iloc[0]["title"], "1234567890123")
+            self.assertEqual(frame.iloc[0]["source"], "NA")
+            pd.DataFrame({"other": ["text"]}).to_csv(source, index=False)
+            with self.assertRaises(ValueError):
+                self.module["load_data"](source)
+        normalized = self.module["normalize"]("বাংলা সংবাদ — Technology!")
+        self.assertIn("বাংলা সংবাদ", normalized)
+        self.assertIn("technology", normalized)
+
+    def test_threshold_separates_unrelated_titles(self):
+        similarity = np.array([[1, .95, .1], [.95, 1, .1], [.1, .1, 1]])
+        with contextlib.redirect_stdout(io.StringIO()):
+            labels = self.module["cluster_titles"](similarity, threshold=.73)
+        self.assertEqual(labels[0], labels[1])
+        self.assertNotEqual(labels[0], labels[2])

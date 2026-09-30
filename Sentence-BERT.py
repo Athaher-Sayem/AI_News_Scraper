@@ -5,7 +5,9 @@ from sklearn.cluster import AgglomerativeClustering
 from sklearn.feature_extraction.text import TfidfVectorizer
 import time
 import re
+import unicodedata
 from pathlib import Path
+from utils.csv_utils import write_csv_atomic
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -15,9 +17,11 @@ DEFAULT_OUTPUT = BASE_DIR / "data" / "unique_news.csv"
 
 # LOAD DATA
 def load_data(path=DEFAULT_INPUT):
-    df = pd.read_csv(path)
+    df = pd.read_csv(path, dtype=str, keep_default_na=False)
     df.columns = [c.strip().lower() for c in df.columns]
-    df = df.dropna(subset=["title"]).reset_index(drop=True)
+    if "title" not in df.columns or df.columns.duplicated().any():
+        raise ValueError("CSV requires a title column and unique normalized headers")
+    df["title"] = df["title"].str.strip()
     df = df[df["title"].str.len() > 10].reset_index(drop=True)
     print(f"Loaded {len(df)} titles")
     return df
@@ -27,8 +31,9 @@ def load_data(path=DEFAULT_INPUT):
 
 
 def normalize(text):
-    text = text.lower()
-    text = re.sub(r"[^a-z0-9\s]", " ", text)
+    text = unicodedata.normalize("NFC", text).lower()
+    text = "".join(character if character.isspace() or unicodedata.category(character)[0] in "LNM"
+                   else " " for character in text)
     text = re.sub(r"\s+", " ", text).strip()
     return text
 
@@ -142,7 +147,9 @@ def deduplicate(
     input_csv=DEFAULT_INPUT, output_csv=DEFAULT_OUTPUT, threshold=0.73
 ):
 
-    if Path(input_csv).resolve() == Path(output_csv).resolve():
+    if Path(input_csv).resolve() == Path(output_csv).resolve() or (
+        Path(output_csv).exists() and Path(input_csv).samefile(output_csv)
+    ):
         raise ValueError("Input and output CSV paths must be different")
     if not 0 < threshold < 1:
         raise ValueError("threshold must be between 0 and 1")
@@ -157,8 +164,7 @@ def deduplicate(
         kept_idx, groups = pick_representatives(df, labels, sim)
         df_kept = df.iloc[kept_idx].reset_index(drop=True)
 
-    Path(output_csv).parent.mkdir(parents=True, exist_ok=True)
-    df_kept.to_csv(output_csv, index=False, encoding="utf-8")
+    write_csv_atomic(df_kept, output_csv, encoding="utf-8")
 
     print("\n" + "=" * 60)
     print("RESULT")
