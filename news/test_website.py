@@ -5,6 +5,15 @@ from .models import News
 
 
 class WebsiteTests(TestCase):
+    def test_unsafe_or_malformed_source_urls_are_not_rendered_as_links(self):
+        for index, url in enumerate(("javascript:alert(1)", "data:text/html,script",
+                                     "https://[invalid", "//example.com/story")):
+            with self.subTest(url=url):
+                article = self.create_article(index, url=url)
+                response = self.client.get(reverse("news:detail", args=[article.pk]))
+                self.assertContains(response, "original source link is unavailable")
+                self.assertNotContains(response, 'class="source-link"')
+
     def create_article(self, index=1, **kwargs):
         fields = dict(title=f"Article {index}", url=f"https://example.com/{index}", source="Fixture",
                       category="technology", language="English", content="Source excerpt. " * 120)

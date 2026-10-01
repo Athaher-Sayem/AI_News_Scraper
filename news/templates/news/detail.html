@@ -9,6 +9,7 @@
   {% if article.published_date %}<p>Source date: {{ article.published_date }}</p>{% endif %}
   <p class="notice">Source excerpt · This is a collected source article, not an approved newspaper publication.</p>
   <div class="excerpt">{{ article.content|truncatewords:100|linebreaks }}</div>
-  <a class="source-link" href="{{ article.url }}" rel="noopener noreferrer">Read the full story at {{ article.source }} ↗</a>
+  {% if source_url %}<a class="source-link" href="{{ source_url }}" rel="noopener noreferrer">Read the full story at {{ article.source }} ↗</a>
+  {% else %}<p>The original source link is unavailable.</p>{% endif %}
 </article>
 {% endblock %}

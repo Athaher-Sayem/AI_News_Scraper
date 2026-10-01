@@ -2,6 +2,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_GET
+from urllib.parse import urlsplit
 
 from .models import News
 
@@ -32,4 +33,9 @@ def home(request):
 @require_GET
 def article_detail(request, pk):
     article = get_object_or_404(News, pk=pk)
-    return render(request, "news/detail.html", {"article": article})
+    try:
+        parsed = urlsplit(article.url)
+        source_url = article.url if parsed.scheme in {"http", "https"} and parsed.hostname else None
+    except ValueError:
+        source_url = None
+    return render(request, "news/detail.html", {"article": article, "source_url": source_url})

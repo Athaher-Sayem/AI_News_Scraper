@@ -135,6 +135,11 @@ version, as requested by the roadmap; they are not implied by an empty module.
 
 ## Verification log
 
+- R13a follow-up: the final website review found that escaping source text did
+  not validate a source link's scheme. Detail pages now link only HTTP/HTTPS
+  sources with a hostname and safely handle malformed URLs. Tests for script/data
+  schemes, malformed hosts, valid attribution links and related API/scraper flows
+  passed (36 tests).
 - R12b: added `tools/check.py` and a GitHub Actions workflow invoking the same
   offline checks; corrected operator docs (PowerShell request syntax, raw-spec
   behavior, job limits, and auto-push failure/retry semantics). The local wrapper
