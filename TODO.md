@@ -42,7 +42,7 @@ version, as requested by the roadmap; they are not implied by an empty module.
   identical/non-English titles, and reproducible output on the available dataset.
 - [x] R11: Review first-version foundation gaps; deliver the smallest coherent
   increment with integration tests rather than implement all roadmap stages.
-- [ ] R12: Review settings/secrets, dependencies, operator documentation, Git
+- [x] R12: Review settings/secrets, dependencies, operator documentation, Git
   workflow claims, and repeatable local/CI checks; fix confirmed issues separately.
 - [ ] R13: Final diff/repository review, full tests, Django/migration/dependency
   checks, complete fixture-based scrape-to-result workflow, available live-service
@@ -135,6 +135,11 @@ version, as requested by the roadmap; they are not implied by an empty module.
 
 ## Verification log
 
+- R12b: added `tools/check.py` and a GitHub Actions workflow invoking the same
+  offline checks; corrected operator docs (PowerShell request syntax, raw-spec
+  behavior, job limits, and auto-push failure/retry semantics). The local wrapper
+  passed all 88 tests plus Django/migration/dependency checks. Hosted Actions
+  execution is not claimed: `gh auth status` reports no authenticated account.
 - R12a: removed the checked-in development secret; settings load ignored `.env`
   values while preserving real environment overrides. Non-debug startup requires
   explicit Django/API keys. Generation URL/model/temperature/token count are

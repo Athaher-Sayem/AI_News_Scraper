@@ -71,6 +71,12 @@ guarantee. Review generated articles and their verification results before use.
 .\.venv\Scripts\python.exe manage.py test
 ```
 
+Run the entire offline check sequence with
+`.\.venv\Scripts\python.exe tools/check.py`. GitHub Actions invokes the same
+command on pushes to `main`/`Demo-v1` and on pull requests. The sequence stops at
+the first failure. Live publisher, browser/CDN, embedding-download, and generation
+checks are separate from this offline suite.
+
 Automated regression tests use mocked generation responses to exercise approval,
 rejection, malformed responses, outages, CSV handling, CLI flow, and the HTTP API
 without requiring the local generation service. The root `Test*.py` files are
@@ -96,7 +102,7 @@ matching HTTP status (400 validation, 401 auth, 404 not found, 405 wrong method,
 `meta` with `page`, `page_size`, `total`, `total_pages`, and `count`.
 
 Set the `NEWS_API_KEY` environment variable to require an `X-API-Key` header on
-every endpoint except `health/`.
+every data endpoint except `health/`. Swagger and its raw specification stay public.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
@@ -119,38 +125,17 @@ The underlying specification is always available as JSON at
 `/api/v1/openapi.json`; both endpoints stay public even when `NEWS_API_KEY`
 is configured, and Swagger UI's "Try it out" works against every endpoint.
 
-The specification is generated from the same code that serves the API
-(`news/api/openapi.py`), and tests assert that every route in the URLconf is
-documented, every `$ref` resolves, and the documented enums and limits match
-the server-side validation.
+The specification is defined in `news/api/openapi.py`; it is not automatically
+inferred from handler implementations. Tests check route coverage, `$ref`s,
+document validity, selected serialized response contracts, and shared enums/limits.
 
-## Git workflow
-
-Every change is committed and pushed immediately: run the checks, commit, and
-push in one step. The repository enables `core.hooksPath = .githooks`, so the
-tracked `post-commit` hook pushes each new commit to its branch on `origin`
-automatically — you never need to run `git push` by hand. The hook also
-fast-forwards `main` (when possible) so the GitHub homepage always shows the
-latest code.
-
-After cloning, activate the hook once:
-
-```powershell
-git config core.hooksPath .githooks
-```
-
-To go back to manual pushing:
-
-```powershell
-git config core.hooksPath .git/hooks
-```
+### Queue and inspect a run
 
 Queue a run:
 
 ```powershell
-curl -X POST http://127.0.0.1:8000/api/v1/pipeline/runs/ `
-  -H "Content-Type: application/json" `
-  -d '{"limit": 1}'
+Invoke-RestMethod -Uri http://127.0.0.1:8000/api/v1/pipeline/runs/ `
+  -Method Post -ContentType 'application/json' -Body '{"limit": 1}'
 ```
 
 Body fields: `limit` (positive integer or `"all"`, default `1`), `input`,
@@ -171,3 +156,26 @@ The current runner is a **single-process development runner**: only the newest
 active daemon threads. Its lock does not coordinate multiple web workers or CLI
 runs. CSV results survive restarts. Durable queueing and restart recovery are
 tracked separately in TODO.md (Celery/Redis milestone).
+
+## Git workflow
+
+For each focused change, test the affected behavior and then run:
+
+```powershell
+git status
+git add .
+git commit -m "Describe the verified change"
+git push
+git status --short --branch
+git ls-remote --heads origin Demo-v1 main
+```
+
+Inspect the diff before staging; `.env` must remain ignored. The installed
+`post-commit` hook attempts to push the current branch and fast-forward `main`.
+It does **not** run tests or create commits, and a failed network push does not
+undo a successful local commit. Check its output and verify the remote tip;
+retry `git push` (and the intended main fast-forward) when necessary.
+
+Hook setup is local to a clone. To enable the tracked hook after cloning, run
+`git config core.hooksPath .githooks`. To return to normal manual pushing, run
+`git config core.hooksPath .git/hooks`.
