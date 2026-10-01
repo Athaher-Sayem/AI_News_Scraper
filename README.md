@@ -16,6 +16,14 @@ in `ai/config.py`. Start the service with `ollama serve` and ensure the configur
 model is installed before processing. Deduplication downloads its sentence
 embedding model on the first run.
 
+Configuration loads from the ignored `.env` file, with environment variables
+taking precedence. See `.env.example` for names. Do not replace an existing
+`.env` containing your settings. `DJANGO_SECRET_KEY` and `NEWS_API_KEY` must be
+set when `DJANGO_DEBUG=false`; configure `DJANGO_ALLOWED_HOSTS` for that server.
+Without a local secret, development uses a new random key each start, so admin
+sessions expire on restart. Set your own persistent local key to retain sessions.
+The default database remains SQLite; PostgreSQL integration is still a roadmap item.
+
 ## Run
 
 The default is a one-article demo using `data/unique_news.csv`:

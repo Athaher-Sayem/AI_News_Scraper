@@ -135,6 +135,13 @@ version, as requested by the roadmap; they are not implied by an empty module.
 
 ## Verification log
 
+- R12a: removed the checked-in development secret; settings load ignored `.env`
+  values while preserving real environment overrides. Non-debug startup requires
+  explicit Django/API keys. Generation URL/model/temperature/token count are
+  configurable and invalid bounds fail early. All 88 tests, Django and dependency
+  checks passed. Existing local `.env` notes were preserved as comments to remove
+  parser warnings; it remains ignored. Then 52 related tests and startup checks
+  passed again. No local credentials were staged or added to the example file.
 - R11: added the missing simple aggregator homepage and attributed excerpt/detail
   pages using the existing News table. Search/category/language filters, paging,
   empty/missing pages, source-text escaping and existing API integration passed
