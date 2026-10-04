@@ -46,6 +46,7 @@ class SpaServingTests(TestCase):
 
     def write_build(self):
         (self.dist / "index.html").write_text("<!doctype html><div id=root></div>", encoding="utf-8")
+        (self.dist / "favicon.svg").write_text("<svg xmlns='http://www.w3.org/2000/svg'/>", encoding="utf-8")
         assets = self.dist / "assets"
         assets.mkdir()
         (assets / "app.js").write_text("console.log('app')", encoding="utf-8")
@@ -113,6 +114,25 @@ class SpaServingTests(TestCase):
     def test_post_is_not_allowed(self):
         self.write_build()
         self.assertEqual(self.client.post("/").status_code, 405)
+
+    def test_missing_assets_404_but_real_assets_and_routes_work(self):
+        self.write_build()
+        ico = self.client.get("/favicon.ico")
+        self.assertEqual(ico.status_code, 404)
+        self.assertNotIn(b"id=root", ico.content)
+
+        favicon = self.client.get("/favicon.svg")
+        self.assertEqual(favicon.status_code, 200)
+        self.assertIn("image/svg", favicon["Content-Type"])
+        self.read(favicon)
+
+        self.assertEqual(self.client.get("/assets/missing.js").status_code, 404)
+        self.assertEqual(self.client.get("/assets/missing.css").status_code, 404)
+
+        # Extensionless client routes still serve the app.
+        route = self.client.get("/about")
+        self.assertEqual(route.status_code, 200)
+        self.assertIn(b"id=root", self.read(route))
 
 
 class SeoTests(TestCase):

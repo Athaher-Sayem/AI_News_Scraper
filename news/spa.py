@@ -1,9 +1,11 @@
 """Serve the built React single-page app from the Django server.
 
-The app lives under ``/app/`` and is served from ``frontend/dist`` (the output
-of ``npm run build``). Unknown paths return ``index.html`` so client-side routes
-(``/app/article/1``) resolve; real files are served with a guessed content type.
-Paths are resolved inside ``dist`` so directory traversal is rejected.
+The app is served at the site root from ``frontend/dist`` (the output of
+``npm run build``). Unknown extensionless paths return ``index.html`` so
+client-side routes (``/article/1``) resolve; real files are served with a guessed
+content type. Missing asset-style paths such as ``/favicon.ico`` return 404
+instead of the app, and paths are resolved inside ``dist`` so traversal is
+rejected.
 """
 
 import mimetypes
@@ -17,6 +19,14 @@ DIST_DIR = Path(settings.BASE_DIR) / "frontend" / "dist"
 INDEX_MISSING_MESSAGE = (
     "Frontend build not found. Run `npm install` and `npm run build` inside frontend/."
 )
+
+# Extensions that must never fall back to index.html: a missing asset should 404
+# rather than return HTML with an image/script content type.
+ASSET_EXTENSIONS = frozenset({
+    ".ico", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".svg", ".bmp",
+    ".css", ".js", ".mjs", ".map", ".json", ".txt", ".xml",
+    ".woff", ".woff2", ".ttf", ".otf", ".eot", ".mp4", ".webm", ".mp3",
+})
 
 
 @require_GET
@@ -37,5 +47,7 @@ def spa(request, path=""):
         if candidate.is_file():
             content_type, _ = mimetypes.guess_type(str(candidate))
             return FileResponse(candidate.open("rb"), content_type=content_type)
+        if Path(path).suffix.lower() in ASSET_EXTENSIONS:
+            raise Http404("Asset not found")
 
     return FileResponse(index.open("rb"), content_type="text/html; charset=utf-8")
