@@ -45,6 +45,16 @@ class WebsiteTests(TestCase):
         self.assertEqual(self.client.get("/", {"page": "invalid"}).status_code, 200)
         self.assertEqual(self.client.get("/", {"page": 10 ** 30}).status_code, 200)
 
+    def test_unfiltered_pagination_links_omit_empty_query_separator(self):
+        for index in range(14):
+            self.create_article(index)
+        first = self.client.get("/")
+        self.assertContains(first, 'href="?page=2"')
+        self.assertNotContains(first, "?&amp;page=2")
+        second = self.client.get("/", {"page": 2})
+        self.assertContains(second, 'href="?page=1"')
+        self.assertNotContains(second, "?&amp;page=1")
+
     def test_source_text_is_escaped_and_existing_api_still_works(self):
         item = self.create_article(title='<script>alert("x")</script>')
         for path in ("/", reverse("news:detail", args=[item.pk])):
