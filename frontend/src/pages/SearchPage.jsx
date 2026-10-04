@@ -7,6 +7,7 @@ import Pagination from "../components/Pagination.jsx";
 import Thumbnail from "../components/Thumbnail.jsx";
 import { EmptyState, ErrorNotice, Loading } from "../components/States.jsx";
 import { excerpt } from "../utils.js";
+import { useMeta } from "../useMeta.js";
 
 const PAGE_SIZE = 12;
 
@@ -15,6 +16,7 @@ export default function SearchPage() {
   const query = (searchParams.get("q") || "").trim();
   const page = searchParams.get("page") || "1";
   const [state, setState] = useState({ loading: false, error: null, items: [], meta: {} });
+  useMeta(query ? `Search: ${query}` : "Search", "Search collected headlines by keyword.");
 
   useEffect(() => {
     if (!query) {

@@ -8,6 +8,7 @@ import Pagination from "../components/Pagination.jsx";
 import Thumbnail from "../components/Thumbnail.jsx";
 import { EmptyState, ErrorNotice, Loading } from "../components/States.jsx";
 import { excerpt } from "../utils.js";
+import { useMeta } from "../useMeta.js";
 
 const PAGE_SIZE = 12;
 
@@ -17,6 +18,7 @@ export default function CategoryPage() {
   const page = searchParams.get("page") || "1";
   const section = sectionBySlug(slug);
   const [state, setState] = useState({ loading: true, error: null, items: [], meta: {} });
+  useMeta(section?.label || "Section", section ? `Collected ${section.label} stories with source attribution.` : "");
 
   useEffect(() => {
     if (!section) return undefined;

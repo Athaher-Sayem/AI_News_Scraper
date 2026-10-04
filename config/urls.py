@@ -19,10 +19,13 @@ from django.contrib import admin
 from django.urls import include, path, re_path
 
 from news.spa import spa
+from news import seo
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/", include("news.api.urls")),
+    path("robots.txt", seo.robots, name="robots"),
+    path("sitemap.xml", seo.sitemap, name="sitemap"),
     # Server-rendered source collection pages (kept alongside the SPA).
     path("collected/", include("news.urls")),
     # React single-page app served at the site root; must stay last so the

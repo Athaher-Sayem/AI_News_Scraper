@@ -8,9 +8,11 @@ import SectionBlock from "../components/SectionBlock.jsx";
 import Thumbnail from "../components/Thumbnail.jsx";
 import { ErrorNotice, Loading } from "../components/States.jsx";
 import { excerpt, relativeTime } from "../utils.js";
+import { useMeta } from "../useMeta.js";
 
 export default function HomePage() {
   const [state, setState] = useState({ loading: true, error: null, top: [], sections: [], missed: [] });
+  useMeta("Latest", "The latest collected headlines, grouped by section and attributed to their sources.");
 
   useEffect(() => {
     let active = true;

@@ -90,3 +90,20 @@ class SpaServingTests(TestCase):
     def test_post_is_not_allowed(self):
         self.write_build()
         self.assertEqual(self.client.post("/").status_code, 405)
+
+
+class SeoTests(TestCase):
+    def test_robots_and_sitemap_are_served_without_the_spa(self):
+        News.objects.create(source="Fixture", category="business", title="Seo story",
+                            url="https://example.com/seo-1", content="Source text")
+        robots = self.client.get("/robots.txt")
+        self.assertEqual(robots.status_code, 200)
+        self.assertIn("text/plain", robots["Content-Type"])
+        self.assertIn("Sitemap:", robots.content.decode())
+
+        sitemap = self.client.get("/sitemap.xml")
+        self.assertEqual(sitemap.status_code, 200)
+        self.assertIn("application/xml", sitemap["Content-Type"])
+        body = sitemap.content.decode()
+        self.assertIn("/section/business", body)
+        self.assertIn(f"/article/{News.objects.get().pk}", body)

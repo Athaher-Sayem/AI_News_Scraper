@@ -6,10 +6,12 @@ import ArticleCard from "../components/ArticleCard.jsx";
 import Thumbnail from "../components/Thumbnail.jsx";
 import { ErrorNotice, Loading } from "../components/States.jsx";
 import { formatDate, paragraphs, resolveSourceLink } from "../utils.js";
+import { useMeta } from "../useMeta.js";
 
 export default function ArticlePage() {
   const { id } = useParams();
   const [state, setState] = useState({ loading: true, error: null, article: null, related: [] });
+  useMeta(state.article?.title || "Story", state.article ? state.article.content.slice(0, 155) : "");
 
   useEffect(() => {
     let active = true;

@@ -33,6 +33,8 @@ function SearchBox() {
 export default function Layout() {
   return (
     <div className="page">
+      <a className="skip-link" href="#main">Skip to content</a>
+
       <div className="topbar">
         <span>{formatDate(new Date().toISOString())}</span>
         <span className="topbar__tagline">Collected headlines · sourced and attributed</span>
@@ -55,9 +57,15 @@ export default function Layout() {
             {section.label}
           </NavLink>
         ))}
+        <NavLink to="/about" className={({ isActive }) => (isActive ? "mainnav__link is-active" : "mainnav__link")}>
+          About
+        </NavLink>
+        <NavLink to="/contact" className={({ isActive }) => (isActive ? "mainnav__link is-active" : "mainnav__link")}>
+          Contact
+        </NavLink>
       </nav>
 
-      <main className="content">
+      <main id="main" className="content">
         <Outlet />
       </main>
 
@@ -69,7 +77,10 @@ export default function Layout() {
         </p>
         <p className="footer__links">
           <Link to="/">Latest</Link>
+          <Link to="/about">About</Link>
+          <Link to="/contact">Contact</Link>
           <a href="/api/v1/docs/">API docs</a>
+          <a href="/collected/">Collected site</a>
           <a href="/admin/">Editor admin</a>
         </p>
       </footer>
