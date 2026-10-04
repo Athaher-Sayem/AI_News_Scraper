@@ -12,5 +12,13 @@ class News(models.Model):
     language = models.CharField(max_length=20, blank=True)
     scraped_date = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["source"], name="news_source_idx"),
+            models.Index(fields=["category"], name="news_category_idx"),
+            models.Index(fields=["language"], name="news_language_idx"),
+            models.Index(fields=["-scraped_date", "-id"], name="news_recent_idx"),
+        ]
+
     def __str__(self):
         return self.title
