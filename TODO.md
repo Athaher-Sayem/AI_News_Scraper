@@ -135,6 +135,17 @@ version, as requested by the roadmap; they are not implied by an empty module.
 
 ## Verification log
 
+- Frontend (React): added a Vite + React single-page app in `frontend/` modelled
+  on the reference newspaper layout (utility bar, masthead with search, section
+  navigation, lead + "Top News" hero, per-category section blocks, "In Case You
+  Missed It" grid, attributed article pages with related stories, paginated
+  section/search listings, responsive down to 390px). Django serves the built app
+  at `/app/` via `news/spa.py` with traversal-safe file serving; the app consumes
+  the existing `/api/v1/` JSON API on the same origin. The 635 previously collected
+  stories render with real images. Verified with Playwright: 9/9 checks (home,
+  article, section, search, mobile) with 0 console errors; 13 images loaded with 0
+  fallbacks; no mobile horizontal overflow. Frontend unit coverage is not set up
+  (no JS test runner); Django gained SPA-serving tests and all 96 Django tests pass.
 - R13 (final review pass): Fixed homepage pagination links that emitted the
   malformed `?&page=N` when no filter was active (now `?page=N`); added a
   regression test. Added database indexes on `News.source`, `News.category`,

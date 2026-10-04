@@ -93,6 +93,35 @@ headline/content search, category and language filters, pagination, and attribut
 excerpt pages linking to the original publisher. These pages display collected
 source records; they do not publish generated drafts or imply editorial approval.
 
+## React frontend
+
+A React (Vite) single-page app provides a newspaper-style interface built from the
+collected stories. Django serves it under `/app/` from the same origin as the JSON
+API, so no CORS setup is required. Build it once:
+
+```powershell
+cd frontend
+npm install
+npm run build   # writes frontend/dist
+```
+
+Then open <http://127.0.0.1:8000/app/>. The home page has a lead story, a
+"Top News" list, per-category section blocks, and an "In Case You Missed It" grid.
+Section (`/app/section/<name>`) and search (`/app/search?q=...`) pages paginate,
+and article pages (`/app/article/<id>`) show the full text, a source-attribution
+link, and related stories. The server-rendered site at `/` remains available.
+
+For live development with hot reload:
+
+```powershell
+cd frontend
+npm run dev     # http://localhost:5173/app/, /api proxied to Django on :8000
+```
+
+Django returns a helpful `503` at `/app/` until `frontend/dist` exists.
+`frontend/node_modules/` is ignored; the built `frontend/dist/` is committed so the
+app also works without a local Node build.
+
 ## HTTP API
 
 All endpoints live under `/api/v1/` and return JSON. Successful responses use
