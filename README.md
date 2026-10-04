@@ -73,9 +73,17 @@ guarantee. Review generated articles and their verification results before use.
 
 Run the entire offline check sequence with
 `.\.venv\Scripts\python.exe tools/check.py`. GitHub Actions invokes the same
-command on pushes to `main`/`Demo-v1` and on pull requests. The sequence stops at
-the first failure. Live publisher, browser/CDN, embedding-download, and generation
-checks are separate from this offline suite.
+command on pushes to `main`/`Demo-v1` and on pull requests, then installs the
+frontend dependencies and runs `npm test` and `npm run build`. The sequence stops
+at the first failure. Live publisher, browser/CDN, embedding-download, and
+generation checks are separate from this offline suite.
+
+Frontend unit tests run with:
+
+```powershell
+cd frontend
+npm test
+```
 
 Automated regression tests use mocked generation responses to exercise approval,
 rejection, malformed responses, outages, CSV handling, CLI flow, and the HTTP API
