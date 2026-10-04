@@ -65,3 +65,18 @@ def run_detail(request, body, run_id):
     if job is None:
         raise ApiError("not_found", "Pipeline run not found", 404)
     return job.to_dict()
+
+
+@api_view(["GET"])
+def categories(request, body):
+    return services.list_categories()
+
+
+@api_view(["GET"])
+def sources(request, body):
+    return services.list_sources()
+
+
+@api_view(["GET"])
+def article_related(request, body, pk):
+    return services.related_articles(pk)

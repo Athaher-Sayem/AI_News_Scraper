@@ -23,9 +23,9 @@ export default function CategoryPage() {
     let active = true;
     setState({ loading: true, error: null, items: [], meta: {} });
     const params = { page, page_size: PAGE_SIZE };
-    // "Latest" lists every collected story; named sections use their primary
-    // category so pagination stays exact.
-    if (section.categories.length) params.category = section.categories[0];
+    // "Latest" lists every collected story; named sections match any of their
+    // category labels (e.g. both "sports" and "sport") via repeated params.
+    if (section.categories.length) params.category = section.categories;
     fetchArticles(params)
       .then(({ items, meta }) => {
         if (active) setState({ loading: false, error: null, items, meta });

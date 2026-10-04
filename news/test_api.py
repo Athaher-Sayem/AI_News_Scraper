@@ -403,3 +403,37 @@ class RunLifecycleTests(ApiTestCase):
         self.assertTrue(job.done.wait(10))
         self.assertEqual(job.status, "succeeded")
         self.assertEqual(job.summary["processed"], 0)
+
+
+class DiscoveryEndpointTests(ApiTestCase):
+    def test_categories_and_sources_report_counts(self):
+        make_article(source="Daily Star", category="business")
+        make_article(source="Daily Star", category="business")
+        make_article(source="Dhaka Tribune", category="sport", url="https://example.com/sport")
+        categories = self.data(self.client.get("/api/v1/categories/"))["items"]
+        self.assertEqual(categories[0], {"category": "business", "count": 2})
+        sources = self.data(self.client.get("/api/v1/sources/"))["items"]
+        self.assertEqual(sources[0], {"source": "Daily Star", "count": 2})
+
+    def test_related_excludes_self_and_keeps_category(self):
+        target = make_article(category="business")
+        same = make_article(category="business", url="https://example.com/same")
+        make_article(category="sport", url="https://example.com/other")
+        items = self.data(self.client.get(f"/api/v1/articles/{target.pk}/related/"))["items"]
+        ids = {item["id"] for item in items}
+        self.assertIn(same.pk, ids)
+        self.assertNotIn(target.pk, ids)
+        self.assertTrue(all(item["category"] == "business" for item in items))
+
+    def test_related_missing_article_returns_404(self):
+        response = self.client.get("/api/v1/articles/999999/related/")
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(self.error(response)["code"], "not_found")
+
+    def test_repeated_category_filter_matches_any(self):
+        make_article(category="sports", url="https://example.com/s1")
+        make_article(category="sport", url="https://example.com/s2")
+        make_article(category="business", url="https://example.com/b1")
+        data = self.data(self.client.get("/api/v1/articles/?category=sports&category=sport"))
+        self.assertEqual(data["meta"]["total"], 2)
+        self.assertEqual({item["category"] for item in data["items"]}, {"sports", "sport"})

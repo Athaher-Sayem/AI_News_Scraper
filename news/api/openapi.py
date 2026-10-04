@@ -124,6 +124,21 @@ def build_spec():
         },
         "required": ["items", "meta"],
     }
+    related_list = {
+        "type": "object",
+        "properties": {"items": {"type": "array", "items": _ref("Article")}},
+        "required": ["items"],
+    }
+    category_list = {
+        "type": "object",
+        "properties": {"items": {"type": "array", "items": _ref("CategoryCount")}},
+        "required": ["items"],
+    }
+    source_list = {
+        "type": "object",
+        "properties": {"items": {"type": "array", "items": _ref("SourceCount")}},
+        "required": ["items"],
+    }
 
     return {
         "openapi": "3.0.3",
@@ -208,6 +223,48 @@ def build_spec():
                         "400": _error_for(400),
                         "401": _error_for(401),
                         "404": _error_for(404),
+                        "405": _error_for(405),
+                        "500": _error_for(500),
+                    },
+                },
+            },
+            "/api/v1/articles/{id}/related/": {
+                "get": {
+                    "tags": ["Articles"],
+                    "operationId": "getRelatedArticles",
+                    "summary": "Related articles from the same category",
+                    "parameters": [_param_ref("ArticleId")],
+                    "responses": {
+                        "200": _ok("Related articles", related_list),
+                        "400": _error_for(400),
+                        "401": _error_for(401),
+                        "404": _error_for(404),
+                        "405": _error_for(405),
+                        "500": _error_for(500),
+                    },
+                },
+            },
+            "/api/v1/categories/": {
+                "get": {
+                    "tags": ["Articles"],
+                    "operationId": "listCategories",
+                    "summary": "Categories with article counts",
+                    "responses": {
+                        "200": _ok("Category counts", category_list),
+                        "401": _error_for(401),
+                        "405": _error_for(405),
+                        "500": _error_for(500),
+                    },
+                },
+            },
+            "/api/v1/sources/": {
+                "get": {
+                    "tags": ["Articles"],
+                    "operationId": "listSources",
+                    "summary": "Sources with article counts",
+                    "responses": {
+                        "200": _ok("Source counts", source_list),
+                        "401": _error_for(401),
                         "405": _error_for(405),
                         "500": _error_for(500),
                     },
@@ -346,7 +403,7 @@ def build_spec():
                 "CategoryFilter": {
                     "name": "category",
                     "in": "query",
-                    "description": "Exact category name",
+                    "description": "Exact category name; repeat to match any of several categories",
                     "schema": {"type": "string"},
                 },
                 "LanguageFilter": {
@@ -464,6 +521,22 @@ def build_spec():
                         "content", "author", "published_date", "image_url",
                         "language", "scraped_date",
                     ],
+                },
+                "CategoryCount": {
+                    "type": "object",
+                    "properties": {
+                        "category": {"type": "string"},
+                        "count": {"type": "integer"},
+                    },
+                    "required": ["category", "count"],
+                },
+                "SourceCount": {
+                    "type": "object",
+                    "properties": {
+                        "source": {"type": "string"},
+                        "count": {"type": "integer"},
+                    },
+                    "required": ["source", "count"],
                 },
                 "ProcessedRow": {
                     "type": "object",

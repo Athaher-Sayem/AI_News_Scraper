@@ -29,7 +29,10 @@ async function request(path) {
 function toQuery(params) {
   const query = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "") {
+    if (value === undefined || value === null || value === "") return;
+    if (Array.isArray(value)) {
+      value.filter(Boolean).forEach((item) => query.append(key, item));
+    } else {
       query.set(key, value);
     }
   });
@@ -46,27 +49,31 @@ export async function fetchArticle(id) {
   return request(`/articles/${id}/`);
 }
 
+export async function fetchRelated(id) {
+  const data = await request(`/articles/${id}/related/`);
+  return data.items || [];
+}
+
+export async function fetchCategories() {
+  const data = await request("/categories/");
+  return data.items || [];
+}
+
+export async function fetchSources() {
+  const data = await request("/sources/");
+  return data.items || [];
+}
+
 export async function fetchStats() {
   return request("/stats/");
 }
 
-// Fetch several category filters at once and merge them newest-first. Used for
-// sections whose collected articles carry more than one category label
-// ("sports" and "sport", "latest" and "latest-news").
+// Sections carry more than one category label ("sports" and "sport",
+// "latest" and "latest-news"); the API accepts repeated category params and
+// matches any of them.
 export async function fetchSection(categories, pageSize) {
-  const results = await Promise.all(
-    categories.map((category) => fetchArticles({ category, page_size: pageSize }))
-  );
-  const seen = new Set();
-  const items = [];
-  for (const result of results) {
-    for (const item of result.items) {
-      if (!seen.has(item.id)) {
-        seen.add(item.id);
-        items.push(item);
-      }
-    }
-  }
-  items.sort((a, b) => (b.scraped_date || "").localeCompare(a.scraped_date || ""));
+  const params = { page_size: pageSize };
+  if (categories.length) params.category = categories;
+  const { items } = await fetchArticles(params);
   return items;
 }

@@ -111,8 +111,9 @@ def list_articles(query):
     queryset = News.objects.all()
     if query.get("source"):
         queryset = queryset.filter(source=query["source"])
-    if query.get("category"):
-        queryset = queryset.filter(category=query["category"])
+    categories = [value for value in query.getlist("category") if value]
+    if categories:
+        queryset = queryset.filter(category__in=categories)
     if query.get("language"):
         queryset = queryset.filter(language=query["language"])
     term = _search_term(query)
@@ -218,6 +219,39 @@ def stats():
             "available": bool(rows) or flow.PROCESSED_CSV_PATH.exists(),
         },
     }
+
+
+def list_categories():
+    rows = (
+        News.objects.exclude(category="")
+        .values("category")
+        .annotate(count=Count("id"))
+        .order_by("-count", "category")
+    )
+    return {"items": [{"category": row["category"], "count": row["count"]} for row in rows]}
+
+
+def list_sources():
+    rows = (
+        News.objects.exclude(source="")
+        .values("source")
+        .annotate(count=Count("id"))
+        .order_by("-count", "source")
+    )
+    return {"items": [{"source": row["source"], "count": row["count"]} for row in rows]}
+
+
+def related_articles(pk, limit=6):
+    try:
+        article = News.objects.get(pk=pk)
+    except News.DoesNotExist:
+        raise ApiError("not_found", "Article not found", 404) from None
+    queryset = (
+        News.objects.filter(category=article.category)
+        .exclude(pk=pk)
+        .order_by("-scraped_date", "-id")[:limit]
+    )
+    return {"items": [serialize_article(item) for item in queryset]}
 
 
 def parse_run_payload(body):

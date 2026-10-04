@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import { fetchArticle, fetchArticles } from "../api.js";
+import { fetchArticle, fetchRelated } from "../api.js";
 import ArticleCard from "../components/ArticleCard.jsx";
 import Thumbnail from "../components/Thumbnail.jsx";
 import { ErrorNotice, Loading } from "../components/States.jsx";
@@ -17,11 +17,7 @@ export default function ArticlePage() {
     async function load() {
       try {
         const article = await fetchArticle(id);
-        let related = [];
-        if (article.category) {
-          const result = await fetchArticles({ category: article.category, page_size: 5 });
-          related = result.items.filter((item) => item.id !== article.id).slice(0, 3);
-        }
+        const related = (await fetchRelated(id)).slice(0, 3);
         if (active) setState({ loading: false, error: null, article, related });
       } catch (error) {
         if (active) setState({ loading: false, error: error.message, article: null, related: [] });
