@@ -1,0 +1,8 @@
+# Keep frontend sources and the built app on LF so `npm run build` is
+# reproducible and its output does not churn with the developer's core.autocrlf.
+frontend/index.html text eol=lf
+frontend/src/** text eol=lf
+frontend/public/** text eol=lf
+# Generated output is stored exactly as the build writes it (LF); never convert
+# so binary assets added later are not corrupted.
+frontend/dist/** -text
