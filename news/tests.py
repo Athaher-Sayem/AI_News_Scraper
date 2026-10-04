@@ -1,12 +1,16 @@
 import tempfile
+from datetime import timedelta
 from pathlib import Path
 from unittest.mock import patch
 
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.http import Http404
 from django.test import RequestFactory, TestCase
+from django.utils import timezone
 
 from news import spa
-from .models import News
+from .models import ArticleView, News
 
 
 class NewsIndexTests(TestCase):
@@ -126,3 +130,21 @@ class SeoTests(TestCase):
         body = sitemap.content.decode()
         self.assertIn("/section/business", body)
         self.assertIn(f"/article/{News.objects.get().pk}", body)
+
+
+class ArticleViewPruningTests(TestCase):
+    def test_prune_removes_old_views_and_keeps_recent(self):
+        article = News.objects.create(source="Fixture", category="business", title="Prune",
+                                      url="https://example.com/prune", content="Source text")
+        old = ArticleView.objects.create(article=article, client_key="old")
+        recent = ArticleView.objects.create(article=article, client_key="recent")
+        ArticleView.objects.filter(pk=old.pk).update(created_at=timezone.now() - timedelta(days=100))
+
+        call_command("prune_article_views", "--days", "90")
+
+        self.assertFalse(ArticleView.objects.filter(pk=old.pk).exists())
+        self.assertTrue(ArticleView.objects.filter(pk=recent.pk).exists())
+
+    def test_prune_rejects_non_positive_days(self):
+        with self.assertRaises(CommandError):
+            call_command("prune_article_views", "--days", "0")

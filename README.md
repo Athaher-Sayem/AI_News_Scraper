@@ -130,7 +130,21 @@ npm run dev     # http://localhost:5173/, /api proxied to Django on :8000
 
 Django returns a helpful `503` at the root until `frontend/dist` exists.
 `frontend/node_modules/` is ignored; the built `frontend/dist/` is committed so the
-app also works without a local Node build.
+app also works without a local Node build (CI verifies it stays in sync).
+
+## View analytics retention
+
+Article views back the Trending page. They are deduplicated per client for
+`VIEW_DEDUP_SECONDS` and rate-limited, then retained for `VIEW_RETENTION_DAYS`
+(default 90). Prune older rows on a schedule, for example a daily cron job:
+
+```powershell
+.\.venv\Scripts\python.exe manage.py prune_article_views
+```
+
+Pass `--days N` to override the window. Only views older than the window are
+deleted; the Trending page reads just the most recent seven days, so pruning
+never removes useful recent analytics.
 
 ## HTTP API
 
