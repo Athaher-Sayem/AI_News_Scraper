@@ -44,6 +44,22 @@ if not DEBUG and not NEWS_API_KEY:
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 
+# Article-view beacon protection and analytics retention.
+# A client is identified by a salted hash of its address (and user agent); no
+# raw address is stored. VIEW_TRUST_PROXY must stay false unless the app runs
+# behind a proxy that overwrites X-Forwarded-For, otherwise clients could spoof
+# it to evade the limits.
+VIEW_DEDUP_SECONDS = int(os.environ.get("VIEW_DEDUP_SECONDS", "21600"))
+VIEW_RATE_MAX = int(os.environ.get("VIEW_RATE_MAX", "120"))
+VIEW_RATE_WINDOW_SECONDS = int(os.environ.get("VIEW_RATE_WINDOW_SECONDS", "60"))
+VIEW_RETENTION_DAYS = int(os.environ.get("VIEW_RETENTION_DAYS", "90"))
+VIEW_TRUST_PROXY = env_bool("VIEW_TRUST_PROXY", False)
+if VIEW_DEDUP_SECONDS < 0 or VIEW_RATE_MAX < 1 or VIEW_RATE_WINDOW_SECONDS < 1 or VIEW_RETENTION_DAYS < 1:
+    raise ImproperlyConfigured(
+        "VIEW_DEDUP_SECONDS must be >= 0; VIEW_RATE_MAX, VIEW_RATE_WINDOW_SECONDS and "
+        "VIEW_RETENTION_DAYS must be positive"
+    )
+
 
 # Application definition
 

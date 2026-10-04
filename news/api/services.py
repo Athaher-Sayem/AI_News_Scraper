@@ -1,8 +1,10 @@
 import csv
+import hashlib
 from collections import Counter
 from datetime import timedelta
 
 import requests
+from django.conf import settings
 from django.db import connection
 from django.db.models import Count, Q
 from django.utils import timezone
@@ -258,12 +260,45 @@ def related_articles(pk, limit=6):
     return {"items": [serialize_article(item) for item in queryset]}
 
 
-def record_view(pk):
+def _client_key(request):
+    """A privacy-preserving per-client key: a salted hash of address + agent.
+
+    ``X-Forwarded-For`` is only consulted when ``VIEW_TRUST_PROXY`` is enabled,
+    so clients cannot spoof the header to evade the dedupe/rate limits.
+    """
+    ip = request.META.get("REMOTE_ADDR", "")
+    if settings.VIEW_TRUST_PROXY:
+        forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
+        if forwarded:
+            ip = forwarded.split(",")[0].strip()
+    agent = request.META.get("HTTP_USER_AGENT", "")
+    material = f"{settings.SECRET_KEY}|{ip}|{agent}".encode("utf-8")
+    return hashlib.sha256(material).hexdigest()[:64]
+
+
+def record_view(pk, request):
+    """Record one article view, deduplicated and rate-limited per client."""
     try:
         article = News.objects.get(pk=pk)
     except News.DoesNotExist:
         raise ApiError("not_found", "Article not found", 404) from None
-    ArticleView.objects.create(article=article)
+
+    client_key = _client_key(request)
+    if client_key:
+        now = timezone.now()
+        rate_since = now - timedelta(seconds=settings.VIEW_RATE_WINDOW_SECONDS)
+        recent = ArticleView.objects.filter(client_key=client_key, created_at__gte=rate_since).count()
+        if recent >= settings.VIEW_RATE_MAX:
+            raise ApiError("rate_limited", "Too many view requests", 429)
+
+        dedupe_since = now - timedelta(seconds=settings.VIEW_DEDUP_SECONDS)
+        already_recorded = ArticleView.objects.filter(
+            article=article, client_key=client_key, created_at__gte=dedupe_since
+        ).exists()
+        if already_recorded:
+            return {"recorded": False}
+
+    ArticleView.objects.create(article=article, client_key=client_key)
     return {"recorded": True}
 
 

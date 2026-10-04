@@ -84,9 +84,9 @@ def article_related(request, body, pk):
 
 @api_view(["POST"], public=True)
 def article_view_beacon(request, body, pk):
-    # A lightweight, unauthenticated telemetry beacon used to rank trending
-    # stories. It is a simple counter, not fraud-resistant.
-    return services.record_view(pk), 202
+    # A public telemetry beacon used to rank trending stories. Views are
+    # deduplicated and rate-limited per client; see services.record_view.
+    return services.record_view(pk, request), 202
 
 
 @api_view(["GET"])

@@ -27,17 +27,21 @@ class News(models.Model):
 class ArticleView(models.Model):
     """A single article open, recorded by the frontend beacon.
 
-    This is a simple counter used to rank trending stories; it is not
-    fraud-resistant and should be aggregated rather than trusted per row.
+    Views are deduplicated per client within a short window (see
+    ``VIEW_DEDUP_SECONDS``) and pruned by the ``prune_article_views`` management
+    command. The counter ranks trending stories; it is not fraud-resistant and
+    should be aggregated rather than trusted per row.
     """
 
     article = models.ForeignKey(News, on_delete=models.CASCADE, related_name="views")
+    client_key = models.CharField(max_length=64, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         indexes = [
             models.Index(fields=["-created_at"], name="view_recent_idx"),
             models.Index(fields=["article", "-created_at"], name="view_article_idx"),
+            models.Index(fields=["client_key", "-created_at"], name="view_client_idx"),
         ]
 
     def __str__(self):

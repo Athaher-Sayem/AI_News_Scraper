@@ -9,7 +9,7 @@ from django.test import Client, TestCase, override_settings
 
 from news.api import jobs, services
 from news.api.http import ApiError
-from news.models import News
+from news.models import ArticleView, News
 from pipeline import flow
 
 
@@ -440,24 +440,72 @@ class DiscoveryEndpointTests(ApiTestCase):
 
 
 class TrendingTests(ApiTestCase):
-    def test_view_beacon_records_and_ranks_trending(self):
+    def view(self, article, client="127.0.0.1"):
+        return self.client.post(
+            f"/api/v1/articles/{article.pk}/view/",
+            data="",
+            content_type="application/json",
+            REMOTE_ADDR=client,
+        )
+
+    def test_first_view_is_recorded_then_deduplicated(self):
+        article = make_article(category="business")
+        first = self.view(article)
+        self.assertEqual(first.status_code, 202)
+        self.assertEqual(self.data(first), {"recorded": True})
+        again = self.view(article)
+        self.assertEqual(again.status_code, 202)
+        self.assertEqual(self.data(again), {"recorded": False})
+        self.assertEqual(ArticleView.objects.filter(article=article).count(), 1)
+
+    def test_different_articles_still_receive_views(self):
+        first = make_article(category="business")
+        second = make_article(category="business", url="https://example.com/second-view")
+        self.assertEqual(self.data(self.view(first)), {"recorded": True})
+        self.assertEqual(self.data(self.view(second)), {"recorded": True})
+        self.assertEqual(ArticleView.objects.count(), 2)
+
+    def test_trending_ranks_by_views_with_distinct_clients(self):
         first = make_article(category="business")
         second = make_article(category="business", url="https://example.com/trend-second")
-        response = self.client.post(f"/api/v1/articles/{second.pk}/view/", data="", content_type="application/json")
-        self.assertEqual(response.status_code, 202)
-        self.assertEqual(self.data(response), {"recorded": True})
-        self.client.post(f"/api/v1/articles/{second.pk}/view/", data="", content_type="application/json")
-        self.client.post(f"/api/v1/articles/{first.pk}/view/", data="", content_type="application/json")
-
+        self.view(second, client="10.0.0.1")
+        self.view(second, client="10.0.0.2")
+        self.view(first, client="10.0.0.3")
         items = self.data(self.client.get("/api/v1/trending/"))["items"]
         self.assertEqual(items[0]["id"], second.pk)
         self.assertEqual(items[0]["views"], 2)
         self.assertEqual(items[1]["id"], first.pk)
+        self.assertEqual(items[1]["views"], 1)
+
+    def test_rate_limit_blocks_a_flooding_client(self):
+        articles = [
+            make_article(category="business", url=f"https://example.com/rl-{index}")
+            for index in range(3)
+        ]
+        with override_settings(VIEW_RATE_MAX=2, VIEW_DEDUP_SECONDS=0):
+            self.assertEqual(self.view(articles[0]).status_code, 202)
+            self.assertEqual(self.view(articles[1]).status_code, 202)
+            blocked = self.view(articles[2])
+        self.assertEqual(blocked.status_code, 429)
+        self.assertEqual(self.error(blocked)["code"], "rate_limited")
+        self.assertEqual(ArticleView.objects.count(), 2)
+
+    def test_dedupe_window_can_be_disabled(self):
+        article = make_article(category="business")
+        with override_settings(VIEW_DEDUP_SECONDS=0):
+            self.assertEqual(self.data(self.view(article)), {"recorded": True})
+            self.assertEqual(self.data(self.view(article)), {"recorded": True})
+        self.assertEqual(ArticleView.objects.filter(article=article).count(), 2)
 
     def test_view_for_missing_article_returns_404(self):
         response = self.client.post("/api/v1/articles/999999/view/", data="", content_type="application/json")
         self.assertEqual(response.status_code, 404)
         self.assertEqual(self.error(response)["code"], "not_found")
+
+    def test_other_endpoints_are_unaffected(self):
+        make_article()
+        self.assertEqual(self.client.get("/api/v1/articles/").status_code, 200)
+        self.assertEqual(self.client.get("/api/v1/trending/").status_code, 200)
 
     def test_trending_falls_back_to_recent_without_views(self):
         make_article()
