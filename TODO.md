@@ -135,6 +135,17 @@ version, as requested by the roadmap; they are not implied by an empty module.
 
 ## Verification log
 
+- Hardening pass (self-review fixes): unknown API routes now return a JSON 404
+  instead of the SPA (the root catch-all excludes api/admin/static and an
+  explicit api 404 view was added); the public view beacon is deduplicated per
+  client and rate limited (salted client hash, no raw address stored);
+  `ArticleView` rows are pruned by `manage.py prune_article_views`; the SPA
+  serves a real SVG favicon and 404s missing asset-style paths; the sitemap is
+  cached with `lastmod`; frontend component/router tests were added; CI fails if
+  the committed `frontend/dist` is stale; and line endings are pinned with
+  `.gitattributes`. Verified: 117 backend and 21 frontend tests pass; a clean
+  build is byte-identical to the committed dist; 27/27 live route and beacon
+  checks pass; and the SPA browser check passes 9/9 with no console errors.
 - Frontend interfaces pass: the React app now owns `/` and the server-rendered
   collection site moved to `/collected/`; fixed a layout bug where inline image
   links collapsed to zero height and overlapped the following block; added
