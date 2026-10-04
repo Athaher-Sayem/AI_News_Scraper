@@ -16,10 +16,13 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
+
+from news.spa import spa
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/", include("news.api.urls")),
+    re_path(r"^app/(?P<path>.*)$", spa, name="spa"),
     path("", include("news.urls")),
 ]

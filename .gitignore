@@ -14,6 +14,12 @@ db.sqlite3
 # IDE
 .vscode/
 
+# Frontend
+frontend/node_modules/
+
+# Command Code session/preference data
+.commandcode/
+
 # Jupyter
 .ipynb_checkpoints/
 
