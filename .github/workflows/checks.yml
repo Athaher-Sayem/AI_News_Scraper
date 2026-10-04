@@ -36,3 +36,13 @@ jobs:
           npm ci
           npm test
           npm run build
+      - name: Verify the committed build is current
+        # The app serves the committed frontend/dist; fail if a rebuild differs
+        # so stale artifacts can never be served silently.
+        shell: bash
+        run: |
+          if ! git diff --quiet --exit-code -- frontend/dist; then
+            echo "frontend/dist is out of date. Run 'npm run build' in frontend/ and commit the result." >&2
+            git --no-pager diff --stat -- frontend/dist >&2
+            exit 1
+          fi
