@@ -103,9 +103,9 @@ class CompleteWorkflowTests(TestCase):
                 self.assertEqual(post.call_count, 7)
                 self.assertEqual(browser.close.call_count, 4)
                 self.assertEqual(self.client.get("/api/v1/articles/").json()["data"]["meta"]["total"], 8)
-                self.assertContains(self.client.get("/"), "Fixture newspaper headline")
+                self.assertContains(self.client.get("/collected/"), "Fixture newspaper headline")
                 saved = News.objects.first()
-                self.assertContains(self.client.get(f"/articles/{saved.pk}/"), saved.source)
+                self.assertContains(self.client.get(f"/collected/articles/{saved.pk}/"), saved.source)
                 stats = self.client.get("/api/v1/stats/").json()["data"]
                 self.assertEqual(stats["articles"]["total"], 8)
                 self.assertEqual(stats["processed"]["by_status"], {"FACT_EXTRACTION_FAILED": 1})

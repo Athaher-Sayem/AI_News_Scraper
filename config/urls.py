@@ -23,6 +23,9 @@ from news.spa import spa
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/", include("news.api.urls")),
-    re_path(r"^app/(?P<path>.*)$", spa, name="spa"),
-    path("", include("news.urls")),
+    # Server-rendered source collection pages (kept alongside the SPA).
+    path("collected/", include("news.urls")),
+    # React single-page app served at the site root; must stay last so the
+    # specific admin/api/collected routes above win.
+    re_path(r"^(?P<path>.*)$", spa, name="spa"),
 ]

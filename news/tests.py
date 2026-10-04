@@ -2,7 +2,8 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
-from django.test import TestCase
+from django.http import Http404
+from django.test import RequestFactory, TestCase
 
 from news import spa
 from .models import News
@@ -45,40 +46,47 @@ class SpaServingTests(TestCase):
         assets.mkdir()
         (assets / "app.js").write_text("console.log('app')", encoding="utf-8")
 
-    def test_missing_build_returns_helpful_503(self):
-        response = self.client.get("/app/")
-        self.assertEqual(response.status_code, 503)
-        self.assertIn("npm run build", response.content.decode())
-
     def read(self, response):
         content = b"".join(response.streaming_content)
         response.close()
         return content
 
-    def test_index_assets_client_routes_and_traversal(self):
+    def test_missing_build_returns_helpful_503(self):
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 503)
+        self.assertIn("npm run build", response.content.decode())
+
+    def test_index_assets_and_client_routes(self):
         self.write_build()
-        index = self.client.get("/app/")
+        index = self.client.get("/")
         self.assertEqual(index.status_code, 200)
         self.assertIn("text/html", index["Content-Type"])
         self.assertIn(b"id=root", self.read(index))
 
-        asset = self.client.get("/app/assets/app.js")
+        asset = self.client.get("/assets/app.js")
         self.assertEqual(asset.status_code, 200)
         self.assertIn("javascript", asset["Content-Type"])
         self.assertIn(b"app", self.read(asset))
 
         # Unknown client-side route falls back to index.html.
-        client_route = self.client.get("/app/section/business")
+        client_route = self.client.get("/section/business")
         self.assertEqual(client_route.status_code, 200)
         self.assertIn(b"id=root", self.read(client_route))
 
-        # Directory traversal outside the build is rejected.
+    def test_traversal_outside_the_build_is_rejected(self):
+        self.write_build()
         secret = self.dist.parent / "secret.txt"
         secret.write_text("do not serve", encoding="utf-8")
         self.addCleanup(secret.unlink)
-        traversal = self.client.get("/app/../secret.txt")
-        self.assertEqual(traversal.status_code, 404)
+        with self.assertRaises(Http404):
+            spa.spa(RequestFactory().get("/"), path="../secret.txt")
+
+    def test_specific_routes_are_not_captured_by_the_spa(self):
+        self.write_build()
+        # Admin and API routes must resolve before the catch-all SPA route.
+        self.assertNotEqual(self.client.get("/api/v1/health/").status_code, 503)
+        self.assertEqual(self.client.get("/collected/").status_code, 200)
 
     def test_post_is_not_allowed(self):
         self.write_build()
-        self.assertEqual(self.client.post("/app/").status_code, 405)
+        self.assertEqual(self.client.post("/").status_code, 405)
