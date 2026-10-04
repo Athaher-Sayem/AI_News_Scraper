@@ -3,6 +3,7 @@ from datetime import timedelta
 from pathlib import Path
 from unittest.mock import patch
 
+from django.core.cache import cache
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.http import Http404
@@ -136,6 +137,10 @@ class SpaServingTests(TestCase):
 
 
 class SeoTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.addCleanup(cache.clear)
+
     def test_robots_and_sitemap_are_served_without_the_spa(self):
         News.objects.create(source="Fixture", category="business", title="Seo story",
                             url="https://example.com/seo-1", content="Source text")
@@ -150,6 +155,26 @@ class SeoTests(TestCase):
         body = sitemap.content.decode()
         self.assertIn("/section/business", body)
         self.assertIn(f"/article/{News.objects.get().pk}", body)
+
+    def test_sitemap_is_valid_cached_and_refreshes_when_data_changes(self):
+        from xml.etree import ElementTree
+
+        first = News.objects.create(source="Fixture", category="business", title="First",
+                                    url="https://example.com/seo-a", content="Source text")
+        body = self.client.get("/sitemap.xml").content.decode()
+        ElementTree.fromstring(body)
+        self.assertIn(f"/article/{first.pk}", body)
+        self.assertRegex(body, r"<lastmod>\d{4}-\d{2}-\d{2}</lastmod>")
+
+        # The second identical request is served from cache.
+        self.assertEqual(body, self.client.get("/sitemap.xml").content.decode())
+
+        # Adding an article changes the cache key and refreshes the sitemap.
+        second = News.objects.create(source="Fixture", category="business", title="Second",
+                                     url="https://example.com/seo-b", content="Source text")
+        refreshed = self.client.get("/sitemap.xml").content.decode()
+        self.assertIn(f"/article/{second.pk}", refreshed)
+        self.assertNotEqual(body, refreshed)
 
 
 class ArticleViewPruningTests(TestCase):
