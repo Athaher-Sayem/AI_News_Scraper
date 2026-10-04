@@ -135,6 +135,18 @@ version, as requested by the roadmap; they are not implied by an empty module.
 
 ## Verification log
 
+- Frontend interfaces pass: the React app now owns `/` and the server-rendered
+  collection site moved to `/collected/`; fixed a layout bug where inline image
+  links collapsed to zero height and overlapped the following block; added
+  categories/sources/trending/related API endpoints and a repeatable category
+  filter; per-route titles/meta plus `robots.txt` and `sitemap.xml`; About and
+  Contact pages; a skip-to-content link and focus styles; Vitest unit tests wired
+  into CI; and an `ArticleView`-backed Trending page. Verified: 106 Django tests
+  and 12 frontend tests pass; Playwright runs pass 9/9 at 0 console errors; the
+  bounding-box audit reports no overlaps and no mobile overflow on home, article,
+  section, trending and about. Image generation and the external (PostgreSQL)
+  database remain out of scope, along with the other roadmap stages (durable
+  workers, the generation engine, the editorial dashboard, and deployment).
 - Frontend (React): added a Vite + React single-page app in `frontend/` modelled
   on the reference newspaper layout (utility bar, masthead with search, section
   navigation, lead + "Top News" hero, per-category section blocks, "In Case You
