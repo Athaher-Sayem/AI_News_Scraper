@@ -87,6 +87,25 @@ class SpaServingTests(TestCase):
         self.assertNotEqual(self.client.get("/api/v1/health/").status_code, 503)
         self.assertEqual(self.client.get("/collected/").status_code, 200)
 
+    def test_unknown_api_routes_return_json_404_not_the_spa(self):
+        self.write_build()
+        for path in ("/api/v1/does-not-exist/", "/api/unknown", "/api/v1/"):
+            with self.subTest(path=path):
+                response = self.client.get(path)
+                self.assertEqual(response.status_code, 404)
+                self.assertIn("application/json", response["Content-Type"])
+                self.assertEqual(response.json()["error"]["code"], "not_found")
+                self.assertNotIn(b"id=root", response.content)
+
+    def test_valid_spa_routes_still_serve_the_app(self):
+        self.write_build()
+        for path in ("/", "/section/business", "/article/1", "/search",
+                     "/trending", "/about", "/contact", "/unknown-client-route"):
+            with self.subTest(path=path):
+                response = self.client.get(path)
+                self.assertEqual(response.status_code, 200)
+                self.assertIn(b"id=root", self.read(response))
+
     def test_post_is_not_allowed(self):
         self.write_build()
         self.assertEqual(self.client.post("/").status_code, 405)

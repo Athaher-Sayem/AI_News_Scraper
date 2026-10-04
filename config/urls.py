@@ -18,17 +18,21 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path, re_path
 
-from news.spa import spa
 from news import seo
+from news.api import views as api_views
+from news.spa import spa
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/", include("news.api.urls")),
+    # Unknown API paths must return the JSON error envelope, never SPA HTML.
+    re_path(r"^api/", api_views.api_not_found, name="api-not-found"),
     path("robots.txt", seo.robots, name="robots"),
     path("sitemap.xml", seo.sitemap, name="sitemap"),
     # Server-rendered source collection pages (kept alongside the SPA).
     path("collected/", include("news.urls")),
-    # React single-page app served at the site root; must stay last so the
-    # specific admin/api/collected routes above win.
-    re_path(r"^(?P<path>.*)$", spa, name="spa"),
+    # React single-page app served at the root. The negative lookahead keeps
+    # backend/static prefixes out of the SPA so their unknown paths 404 instead
+    # of returning index.html.
+    re_path(r"^(?!admin/|static/|api/)(?P<path>.*)$", spa, name="spa"),
 ]

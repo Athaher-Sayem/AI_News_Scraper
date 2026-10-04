@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_GET
 
 from news.api import jobs, services
-from news.api.http import ApiError, api_view
+from news.api.http import ApiError, api_view, error_response
 from news.api.openapi import DOCS_HTML, build_spec
 
 
@@ -92,3 +92,11 @@ def article_view_beacon(request, body, pk):
 @api_view(["GET"])
 def trending(request, body):
     return services.list_trending()
+
+
+def api_not_found(request, *args, **kwargs):
+    """Return the JSON error envelope for API paths the URLconf does not match.
+
+    Without this, the SPA catch-all would answer unknown API routes with HTML.
+    """
+    return error_response("not_found", "API endpoint not found", 404)
