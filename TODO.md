@@ -44,7 +44,7 @@ version, as requested by the roadmap; they are not implied by an empty module.
   increment with integration tests rather than implement all roadmap stages.
 - [x] R12: Review settings/secrets, dependencies, operator documentation, Git
   workflow claims, and repeatable local/CI checks; fix confirmed issues separately.
-- [ ] R13: Final diff/repository review, full tests, Django/migration/dependency
+- [x] R13: Final diff/repository review, full tests, Django/migration/dependency
   checks, complete fixture-based scrape-to-result workflow, available live-service
   smoke tests, localhost checks, and remote/working-tree verification.
 
@@ -135,6 +135,21 @@ version, as requested by the roadmap; they are not implied by an empty module.
 
 ## Verification log
 
+- R13 (final review pass): Fixed homepage pagination links that emitted the
+  malformed `?&page=N` when no filter was active (now `?page=N`); added a
+  regression test. Added database indexes on `News.source`, `News.category`,
+  `News.language`, and a composite `(-scraped_date, -id)` ordering index with
+  migration `0003`, confirmed present in SQLite and used by the query planner.
+  All 93 tests pass; `manage.py check`, `makemigrations --check --dry-run`, and
+  `pip check` pass; the fixture scrape→deduplicate→process→DB→CSV→API→website
+  workflow passes. A real CLI run (`Main.py --input data/test_news.csv --output
+  data/cli_smoke.csv --limit 1`) correctly exited 1 and recorded
+  `FACT_EXTRACTION_FAILED` with the connection error when the generation service
+  was unavailable. Localhost GET smoke covered homepage/pagination, attributed
+  detail pages, health, stats, articles, processed, runs, `openapi.json`,
+  Swagger docs, and 400/404/405 envelopes. The local Ollama service was not
+  running, so live generation/translation/image checks were not performed; the
+  AI/editor/deployment roadmap stages remain unimplemented placeholders.
 - R13a follow-up: the final website review found that escaping source text did
   not validate a source link's scheme. Detail pages now link only HTTP/HTTPS
   sources with a hostname and safely handle malformed URLs. Tests for script/data
