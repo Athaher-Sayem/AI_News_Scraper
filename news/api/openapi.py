@@ -139,6 +139,11 @@ def build_spec():
         "properties": {"items": {"type": "array", "items": _ref("SourceCount")}},
         "required": ["items"],
     }
+    trending_list = {
+        "type": "object",
+        "properties": {"items": {"type": "array", "items": _ref("TrendingArticle")}},
+        "required": ["items"],
+    }
 
     return {
         "openapi": "3.0.3",
@@ -239,6 +244,34 @@ def build_spec():
                         "400": _error_for(400),
                         "401": _error_for(401),
                         "404": _error_for(404),
+                        "405": _error_for(405),
+                        "500": _error_for(500),
+                    },
+                },
+            },
+            "/api/v1/articles/{id}/view/": {
+                "post": {
+                    "tags": ["Articles"],
+                    "operationId": "recordArticleView",
+                    "summary": "Record an article view (public telemetry beacon)",
+                    "parameters": [_param_ref("ArticleId")],
+                    "responses": {
+                        "202": _ok("View recorded", _ref("ViewRecord")),
+                        "404": _error_for(404),
+                        "405": _error_for(405),
+                        "415": _error_for(415),
+                        "500": _error_for(500),
+                    },
+                },
+            },
+            "/api/v1/trending/": {
+                "get": {
+                    "tags": ["Articles"],
+                    "operationId": "listTrending",
+                    "summary": "Most-viewed articles in the last 7 days",
+                    "responses": {
+                        "200": _ok("Trending articles", trending_list),
+                        "401": _error_for(401),
                         "405": _error_for(405),
                         "500": _error_for(500),
                     },
@@ -537,6 +570,21 @@ def build_spec():
                         "count": {"type": "integer"},
                     },
                     "required": ["source", "count"],
+                },
+                "ViewRecord": {
+                    "type": "object",
+                    "properties": {"recorded": {"type": "boolean"}},
+                    "required": ["recorded"],
+                },
+                "TrendingArticle": {
+                    "allOf": [
+                        _ref("Article"),
+                        {
+                            "type": "object",
+                            "properties": {"views": {"type": "integer"}},
+                            "required": ["views"],
+                        },
+                    ]
                 },
                 "ProcessedRow": {
                     "type": "object",

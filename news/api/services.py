@@ -1,14 +1,18 @@
 import csv
 from collections import Counter
+from datetime import timedelta
 
 import requests
 from django.db import connection
 from django.db.models import Count, Q
+from django.utils import timezone
 
 from news.api.http import ApiError
 from news.api.serializers import serialize_article, serialize_processed
-from news.models import News
+from news.models import ArticleView, News
 from pipeline import flow
+
+TRENDING_WINDOW_DAYS = 7
 
 ARTICLE_FILTERS = {"source", "category", "language", "q"}
 PROCESSED_FILTERS = {"status", "source", "q"}
@@ -252,6 +256,38 @@ def related_articles(pk, limit=6):
         .order_by("-scraped_date", "-id")[:limit]
     )
     return {"items": [serialize_article(item) for item in queryset]}
+
+
+def record_view(pk):
+    try:
+        article = News.objects.get(pk=pk)
+    except News.DoesNotExist:
+        raise ApiError("not_found", "Article not found", 404) from None
+    ArticleView.objects.create(article=article)
+    return {"recorded": True}
+
+
+def list_trending(limit=10):
+    since = timezone.now() - timedelta(days=TRENDING_WINDOW_DAYS)
+    ranked = (
+        ArticleView.objects.filter(created_at__gte=since)
+        .values("article_id")
+        .annotate(views=Count("id"))
+        .order_by("-views")[:limit]
+    )
+    counts = {row["article_id"]: row["views"] for row in ranked}
+    articles = {article.pk: article for article in News.objects.filter(pk__in=counts)}
+    items = [
+        {**serialize_article(articles[pk]), "views": counts[pk]}
+        for pk in counts
+        if pk in articles
+    ]
+    if not items:
+        items = [
+            serialize_article(article)
+            for article in News.objects.order_by("-scraped_date", "-id")[:limit]
+        ]
+    return {"items": items}
 
 
 def parse_run_payload(body):

@@ -64,6 +64,20 @@ export async function fetchSources() {
   return data.items || [];
 }
 
+export async function fetchTrending() {
+  const data = await request("/trending/");
+  return data.items || [];
+}
+
+// Fire-and-forget view beacon; failures never affect the page.
+export async function recordView(id) {
+  try {
+    await fetch(`${BASE}/articles/${id}/view/`, { method: "POST" });
+  } catch (error) {
+    /* telemetry only */
+  }
+}
+
 export async function fetchStats() {
   return request("/stats/");
 }

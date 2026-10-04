@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import { fetchArticle, fetchRelated } from "../api.js";
+import { fetchArticle, fetchRelated, recordView } from "../api.js";
 import ArticleCard from "../components/ArticleCard.jsx";
 import Thumbnail from "../components/Thumbnail.jsx";
 import { ErrorNotice, Loading } from "../components/States.jsx";
@@ -12,6 +12,10 @@ export default function ArticlePage() {
   const { id } = useParams();
   const [state, setState] = useState({ loading: true, error: null, article: null, related: [] });
   useMeta(state.article?.title || "Story", state.article ? state.article.content.slice(0, 155) : "");
+
+  useEffect(() => {
+    recordView(id);
+  }, [id]);
 
   useEffect(() => {
     let active = true;

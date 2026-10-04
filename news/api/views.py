@@ -80,3 +80,15 @@ def sources(request, body):
 @api_view(["GET"])
 def article_related(request, body, pk):
     return services.related_articles(pk)
+
+
+@api_view(["POST"], public=True)
+def article_view_beacon(request, body, pk):
+    # A lightweight, unauthenticated telemetry beacon used to rank trending
+    # stories. It is a simple counter, not fraud-resistant.
+    return services.record_view(pk), 202
+
+
+@api_view(["GET"])
+def trending(request, body):
+    return services.list_trending()

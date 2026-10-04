@@ -437,3 +437,30 @@ class DiscoveryEndpointTests(ApiTestCase):
         data = self.data(self.client.get("/api/v1/articles/?category=sports&category=sport"))
         self.assertEqual(data["meta"]["total"], 2)
         self.assertEqual({item["category"] for item in data["items"]}, {"sports", "sport"})
+
+
+class TrendingTests(ApiTestCase):
+    def test_view_beacon_records_and_ranks_trending(self):
+        first = make_article(category="business")
+        second = make_article(category="business", url="https://example.com/trend-second")
+        response = self.client.post(f"/api/v1/articles/{second.pk}/view/", data="", content_type="application/json")
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(self.data(response), {"recorded": True})
+        self.client.post(f"/api/v1/articles/{second.pk}/view/", data="", content_type="application/json")
+        self.client.post(f"/api/v1/articles/{first.pk}/view/", data="", content_type="application/json")
+
+        items = self.data(self.client.get("/api/v1/trending/"))["items"]
+        self.assertEqual(items[0]["id"], second.pk)
+        self.assertEqual(items[0]["views"], 2)
+        self.assertEqual(items[1]["id"], first.pk)
+
+    def test_view_for_missing_article_returns_404(self):
+        response = self.client.post("/api/v1/articles/999999/view/", data="", content_type="application/json")
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(self.error(response)["code"], "not_found")
+
+    def test_trending_falls_back_to_recent_without_views(self):
+        make_article()
+        items = self.data(self.client.get("/api/v1/trending/"))["items"]
+        self.assertEqual(len(items), 1)
+        self.assertNotIn("views", items[0])

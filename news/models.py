@@ -22,3 +22,23 @@ class News(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class ArticleView(models.Model):
+    """A single article open, recorded by the frontend beacon.
+
+    This is a simple counter used to rank trending stories; it is not
+    fraud-resistant and should be aggregated rather than trusted per row.
+    """
+
+    article = models.ForeignKey(News, on_delete=models.CASCADE, related_name="views")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["-created_at"], name="view_recent_idx"),
+            models.Index(fields=["article", "-created_at"], name="view_article_idx"),
+        ]
+
+    def __str__(self):
+        return f"View of {self.article_id} at {self.created_at:%Y-%m-%d %H:%M}"

@@ -57,6 +57,9 @@ export default function Layout() {
             {section.label}
           </NavLink>
         ))}
+        <NavLink to="/trending" className={({ isActive }) => (isActive ? "mainnav__link is-active" : "mainnav__link")}>
+          Trending
+        </NavLink>
         <NavLink to="/about" className={({ isActive }) => (isActive ? "mainnav__link is-active" : "mainnav__link")}>
           About
         </NavLink>
