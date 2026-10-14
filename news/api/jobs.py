@@ -7,12 +7,13 @@ from django.utils import timezone
 
 from news.api.http import ApiError
 from news.api.serializers import serialize_job
-from pipeline import flow
+from pipeline import flow, progress
 
 logger = logging.getLogger(__name__)
 
 MAX_JOBS = 20
 ACTIVE_STATUSES = ("queued", "running")
+FINISHED_STATUSES = ("succeeded", "failed", "cancelled")
 
 _lock = threading.Lock()
 _jobs = OrderedDict()
@@ -29,6 +30,12 @@ class PipelineJob:
         self.started_at = None
         self.finished_at = None
         self.done = threading.Event()
+        self.tracker = progress.RunTracker(
+            progress.plan_for(
+                scrape=bool(self.request.get("scrape")),
+                deduplicate=bool(self.request.get("deduplicate")),
+            )
+        )
 
     def to_dict(self):
         with _lock:
@@ -49,6 +56,18 @@ def get(job_id):
 def recent(limit=MAX_JOBS):
     with _lock:
         return list(reversed(_jobs.values()))[:limit]
+
+
+def cancel(job_id):
+    """Ask an active run to stop at its next checkpoint."""
+    with _lock:
+        job = _jobs.get(job_id)
+        if job is None:
+            raise ApiError("not_found", "Pipeline run not found", 404)
+        if job.status not in ACTIVE_STATUSES:
+            raise ApiError("not_cancellable", f"Run already {job.status}", 409)
+    job.tracker.request_cancel()
+    return job
 
 
 def submit(request, runner=None):
@@ -108,6 +127,8 @@ def _execute(job, runner):
         job.status = "running"
         job.started_at = timezone.now()
     status, error, summary = "failed", None, None
+    progress.bind(job.tracker)
+    job.tracker.log("Run started")
     try:
         close_old_connections()
         result = runner(**job.request)
@@ -115,10 +136,24 @@ def _execute(job, runner):
         status = "failed" if summary["failed"] else "succeeded"
         if summary["failed"]:
             error = f"{summary['failed']} article(s) failed processing; see saved results"
+    except progress.RunCancelled as cancelled:
+        status = "cancelled"
+        try:
+            summary = _summarize(cancelled.result)
+        except ValueError:
+            summary = None
     except Exception as exception:
         logger.exception("Pipeline run %s failed", job.id)
         error = str(exception) or exception.__class__.__name__
     finally:
+        progress.unbind()
+        job.tracker.finalize(status)
+        job.tracker.log(
+            {"succeeded": "Run finished", "cancelled": "Run cancelled"}.get(
+                status, f"Run failed: {error}" if error else "Run failed"
+            ),
+            "info" if status == "succeeded" else "warn" if status == "cancelled" else "error",
+        )
         try:
             close_old_connections()
         finally:

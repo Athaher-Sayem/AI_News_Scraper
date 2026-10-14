@@ -2,6 +2,7 @@ import os
 import runpy
 from pathlib import Path
 
+from pipeline import progress
 from pipeline.pipeline import run_pipeline
 
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -9,6 +10,7 @@ RAW_CSV_PATH = BASE_DIR / "data" / "news_data.csv"
 UNIQUE_CSV_PATH = BASE_DIR / "data" / "unique_news.csv"
 PROCESSED_CSV_PATH = BASE_DIR / "data" / "processed_news.csv"
 DEDUP_THRESHOLD = 0.73
+SOURCE_NAMES = ("Daily Star", "Dhaka Tribune", "The Business Standard", "Daily Sun")
 
 
 def resolve_project_path(path, label="path"):
@@ -63,7 +65,22 @@ def validate_paths(
     return input_path, output_path
 
 
-def collect_news(csv_path=RAW_CSV_PATH):
+def validate_sources(sources):
+    """Return the requested publisher names, or None for every source."""
+    if sources is None:
+        return None
+    if isinstance(sources, (str, bytes)) or not isinstance(sources, (list, tuple)):
+        raise ValueError("sources must be a list of source names")
+    names = list(dict.fromkeys(sources))
+    unknown = [name for name in names if name not in SOURCE_NAMES]
+    if unknown or not names:
+        raise ValueError(
+            "sources must be a non-empty subset of: " + ", ".join(SOURCE_NAMES)
+        )
+    return names
+
+
+def collect_news(csv_path=RAW_CSV_PATH, sources=None):
     import django
 
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
@@ -84,13 +101,18 @@ def collect_news(csv_path=RAW_CSV_PATH):
     )
     from sources.Daily_Sun import dailysun_base_url, dailysun_categories
 
-    sources = (
+    selected = validate_sources(sources)
+    publishers = (
         (dailystar_categories, dailystar_base_url, "Daily Star", DAILY_STAR_CONFIG),
         (dhakatribune_categories, dhakatribune_base_url, "Dhaka Tribune", DHAKA_TRIBUNE_CONFIG),
         (theBusinessStandard_categories, theBusinessStandard_base_url, "The Business Standard", BUSINESS_STANDARD_CONFIG),
         (dailysun_categories, dailysun_base_url, "Daily Sun", DAILY_SUN_CONFIG),
     )
-    for categories, base_url, source, config in sources:
+    for categories, base_url, source, config in publishers:
+        if selected is not None and source not in selected:
+            continue
+        progress.checkpoint()
+        progress.log(f"Scraping {source}")
         news_collect(categories, base_url, source, config, str(csv_path))
 
 
@@ -117,13 +139,22 @@ def run_flow(
     limit=1,
     scrape=False,
     deduplicate=False,
+    sources=None,
 ):
     """Scrape, deduplicate, and/or process news as one ordered flow."""
     input_path, output_path = validate_paths(input_csv, output_csv, scrape, deduplicate)
     validate_limit(limit)
+    validate_sources(sources)
 
     if scrape:
-        collect_news()
+        with progress.stage("scrape"):
+            if sources:
+                collect_news(sources=sources)
+            else:
+                collect_news()
+        progress.checkpoint()
     if scrape or deduplicate:
-        deduplicate_news(input_path)
+        with progress.stage("deduplicate"):
+            deduplicate_news(input_path)
+        progress.checkpoint()
     return run_pipeline(input_path, output_path, limit=limit)

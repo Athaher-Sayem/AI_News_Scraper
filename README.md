@@ -132,6 +132,38 @@ Django returns a helpful `503` at the root until `frontend/dist` exists.
 `frontend/node_modules/` is ignored; the built `frontend/dist/` is committed so the
 app also works without a local Node build (CI verifies it stays in sync).
 
+## Operations dashboard
+
+A dedicated console for running and managing the whole pipeline lives at
+<http://127.0.0.1:8000/dashboard/>. It is plain HTML/CSS/JS served by Django (no
+build step, no CDN; fonts are bundled), so it works offline and leaves the
+`frontend/dist` CI check untouched.
+
+| Page | What it does |
+| --- | --- |
+| Overview | Service health (database, Ollama model, API key), key numbers, quality funnel, result breakdown, 14-day collection chart, per-source totals |
+| Pipeline | Start a run (process only, deduplicate + process, or full scrape), choose sources, limit and files; live stage tracker, progress bar, log, and a safe **Stop run** |
+| Runs | History of recent runs with parameters, outcome, stage counts, and log; "Run again" prefills the form |
+| Review | Filter processed articles by status, source, and title; inspect the generated article, facts, verifier decision, and source text |
+| Data | Source table with a per-source scrape shortcut, collected-article explorer, CSV files with download, and read-only configuration |
+
+When `NEWS_API_KEY` is set the console asks for it (key icon in the top bar) and
+sends it as `X-API-Key`; the page itself carries no data. Views are deep-linkable
+(`#/review/12?status=APPROVED`), keyboard accessible, and follow the system
+light/dark theme.
+
+Cancellation is cooperative: **Stop run** stops after the current publisher or
+article. Rows already processed are saved to the output CSV, like a smaller
+`--limit` run, and the run is reported as `cancelled`. A page fetch or model call
+already in flight finishes first.
+
+The console adds endpoints under `/dashboard/api/` (same JSON envelope and
+`X-API-Key` rule as `/api/v1/`): `overview/`, `runs/` (GET, and POST, which also
+accepts `sources`, a list of publisher names, together with `scrape`),
+`runs/{id}/?after=N` (status, stages, incremental log), `runs/{id}/cancel/`,
+`files/`, and `files/{name}/download/`. They are intentionally not part of the
+public OpenAPI document. Run history has the same in-memory limits described below.
+
 ## View analytics retention
 
 Article views back the Trending page. They are deduplicated per client for
@@ -194,7 +226,7 @@ Invoke-RestMethod -Uri http://127.0.0.1:8000/api/v1/pipeline/runs/ `
 Body fields: `limit` (positive integer or `"all"`, default `1`), `input`,
 `output` (project-relative paths), `scrape`, `deduplicate` (booleans). The
 response is `202 Accepted` with a `Location` header. Runs execute in the
-background with states `queued` → `running` → `succeeded`/`failed`; only one
+background with states `queued` → `running` → `succeeded`/`failed`/`cancelled`; only one
 run may be active at a time (otherwise `409 job_conflict`). Input/output paths
 must be CSV files beneath `data/` and can never overwrite the raw scrape
 CSV. Poll `pipeline/runs/{id}/` for `summary` (`processed`, `approved`,

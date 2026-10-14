@@ -17,6 +17,7 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import include, path, re_path
+from django.views.generic import RedirectView
 
 from news import seo
 from news.api import views as api_views
@@ -25,6 +26,9 @@ from news.spa import spa
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/", include("news.api.urls")),
+    # Operations dashboard: pipeline control, live runs, review, and data.
+    re_path(r"^dashboard$", RedirectView.as_view(url="/dashboard/"), name="dashboard-redirect"),
+    path("dashboard/", include("dashboard.urls")),
     # Unknown API paths must return the JSON error envelope, never SPA HTML.
     re_path(r"^api/", api_views.api_not_found, name="api-not-found"),
     path("robots.txt", seo.robots, name="robots"),
@@ -34,5 +38,5 @@ urlpatterns = [
     # React single-page app served at the root. The negative lookahead keeps
     # backend/static prefixes out of the SPA so their unknown paths 404 instead
     # of returning index.html.
-    re_path(r"^(?!admin/|static/|api/)(?P<path>.*)$", spa, name="spa"),
+    re_path(r"^(?!admin/|static/|api/|dashboard/)(?P<path>.*)$", spa, name="spa"),
 ]

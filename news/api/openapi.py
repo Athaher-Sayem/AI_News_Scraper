@@ -44,7 +44,7 @@ and `docs/`.
 
 **Pipeline runs.** `POST /api/v1/pipeline/runs` queues a background run and
 returns `202` with a `Location` header. Runs move through
-`queued` → `running` → `succeeded` or `failed`. Only one run can be active at a
+`queued` → `running` → `succeeded`, `failed`, or `cancelled`. Only one run can be active at a
 time; a second attempt returns `409 job_conflict`. Paths must stay inside the
 project's `data/` directory, must use `.csv`, and can never overwrite the raw scrape CSV."""
 
@@ -744,7 +744,7 @@ def build_spec():
                         "id": {"type": "string"},
                         "status": {
                             "type": "string",
-                            "enum": ["queued", "running", "succeeded", "failed"],
+                            "enum": ["queued", "running", "succeeded", "failed", "cancelled"],
                         },
                         "request": _ref("RunParameters"),
                         "summary": {"oneOf": [_ref("RunSummary"), {"type": "object", "nullable": True, "enum": [None]}]},

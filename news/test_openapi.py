@@ -149,7 +149,7 @@ class OpenApiSpecTests(TestCase):
         run = spec["components"]["schemas"]["Run"]
         self.assertEqual(
             run["properties"]["status"]["enum"],
-            ["queued", "running", "succeeded", "failed"],
+            ["queued", "running", "succeeded", "failed", "cancelled"],
         )
 
     def test_enums_match_server_validation(self):
